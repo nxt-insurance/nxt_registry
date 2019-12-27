@@ -30,8 +30,11 @@ class MyClass
     @passengers ||= begin
       registry :from do
         nested :to do
-          nested :via, default: -> { [] }, memoize: true, call: true do
+          nested :via do
             attrs :train, :car, :plane, :horse
+            default -> { [] }
+            memoize true 
+            call true
           end
         end
       end

@@ -52,19 +52,19 @@ module NxtRegistry
     end
 
     def register(key, value)
-      __register(key, value)
+      __register(key, value, raise: false)
     end
 
     def register!(key, value)
-      __register(key, value, raise: true)
+      __register(key, value)
     end
 
     def resolve(key)
-      __resolve(key)
+      __resolve(key, raise: false)
     end
 
     def resolve!(key)
-      __resolve(key, raise: true)
+      __resolve(key)
     end
 
     def to_h
