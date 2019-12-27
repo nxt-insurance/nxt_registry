@@ -18,7 +18,7 @@ module NxtRegistry
     attr_reader :options, :config, :level
 
     def set_nested_builder_as_default
-      self.default_value = NestedRegistryBuilder.new do
+      self.default = NestedRegistryBuilder.new do
         RecursiveRegistry.new("level_#{(level + 1)}", **options.merge(level: (level + 1)), &config)
       end
     end

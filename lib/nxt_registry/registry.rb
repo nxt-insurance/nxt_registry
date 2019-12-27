@@ -4,12 +4,13 @@ module NxtRegistry
       @name = name
       @parent = options[:parent]
       @namespace = [parent, self].compact.map(&:name).join('.')
-      @default_value = options.fetch(:default) { Blank.new }
-      @memoize_value = options.fetch(:memoize) { true }
-      @call_proc_value = options.fetch(:call) { true }
+      @default = options.fetch(:default) { Blank.new }
+      @memoize = options.fetch(:memoize) { true }
+      @call = options.fetch(:call) { true }
+      @resolver = options.fetch(:resolver) { ->(value) { value } }
       @config = config
       @store = { }
-      @allowed_attributes = nil
+      @attrs = nil
       @is_leaf = true
 
       configure
@@ -20,15 +21,15 @@ module NxtRegistry
     def nested(name, **options, &config)
       options = options.merge(parent: self)
 
-      if default_value.is_a?(Blank)
+      if default.is_a?(Blank)
         self.is_leaf = false
 
-        self.default_value = NestedRegistryBuilder.new do
+        self.default = NestedRegistryBuilder.new do
           Registry.new(name, **options, &config)
         end
 
-        default_value.call
-      elsif default_value.is_a?(NestedRegistryBuilder)
+        default.call
+      elsif default.is_a?(NestedRegistryBuilder)
         raise ArgumentError, "Multiple nestings on the same level"
       else
         raise ArgumentError, "Default values cannot be defined on registries that nest others"
@@ -36,14 +37,30 @@ module NxtRegistry
     end
 
     def attr(name)
-      @allowed_attributes ||= {}
-      raise KeyError, "Attribute #{name} already registered in #{namespace}" if allowed_attributes.has_key?(name)
+      raise KeyError, "Attribute #{name} already registered in #{namespace}" if attrs.has_key?(name)
 
-      allowed_attributes[name] = Attribute.new(name, self)
+      attrs[name] = Attribute.new(name, self)
     end
 
     def attrs(*args)
+      @attrs ||= {}
+      return @attrs unless args.any?
+
       args.each { |name| attr(name) }
+    end
+
+    %i[default memoize call resolver].each do |accessor|
+      define_method accessor do |value = Blank.new|
+        if value.is_a?(Blank)
+          instance_variable_get("@#{accessor}")
+        else
+          instance_variable_set("@#{accessor}", value)
+        end
+      end
+
+      define_method "#{accessor}=" do |value|
+        instance_variable_set("@#{accessor}", value)
+      end
     end
 
     def register(key, value)
@@ -68,10 +85,21 @@ module NxtRegistry
 
     delegate_missing_to :store
 
+    def configure(block = config)
+      if block.present?
+        if block.arity == 1
+          instance_exec(self, &block)
+        else
+          instance_exec(&block)
+        end
+      end
+      define_interface
+    end
+
     private
 
-    attr_reader :namespace, :parent, :config, :store, :allowed_attributes, :call_proc_value, :memoize_value
-    attr_accessor :default_value, :is_leaf
+    attr_reader :namespace, :parent, :config, :store
+    attr_accessor :is_leaf
 
     def is_leaf?
       @is_leaf
@@ -79,39 +107,36 @@ module NxtRegistry
 
     def __register(key, value, raise: true)
       raise ArgumentError, "Not allowed to register values in a registry that contains nested registries" unless is_leaf
-      raise KeyError, "Keys are restricted to #{allowed_attributes.keys}" if attribute_not_allowed?(key)
-      raise KeyError, "Key '#{key}' already registered in registry '#{namespace}'" if store.has_key?(key) && raise
+      raise KeyError, "Keys are restricted to #{attrs.keys}" if attribute_not_allowed?(key)
+      raise NxtRegistry::Errors::DuplicateKeyError, "Key '#{key}' already registered in registry '#{namespace}'" if store.has_key?(key) && raise
 
       store[key] = value
     end
 
     def __resolve(key, raise: true)
-      if is_leaf?
+      value = if is_leaf?
         if store.has_key?(key)
           store.fetch(key)
         else
-          if default_value.is_a?(Blank)
+          if default.is_a?(Blank)
             if raise
-              raise KeyError, "Key '#{key}' not registered in registry '#{namespace}'"
+              raise NxtRegistry::Errors::MissingKeyError, "Key '#{key}' not registered in registry '#{namespace}'"
             else
               nil
             end
           else
-            value = resolve_default_value
-            return value unless memoize_value
+            value = resolve_default
+            return value unless memoize
 
             store[key] ||= value
           end
         end
       else
         # Call nested registry builder when we are not a leaf
-        store[key] ||= default_value.call
+        store[key] ||= default.call
       end
-    end
 
-    def configure
-      instance_exec(&config) if config.present?
-      define_interface
+      resolver.call(value)
     end
 
     def define_interface
@@ -137,16 +162,16 @@ module NxtRegistry
     end
 
     def attribute_not_allowed?(key)
-      return unless allowed_attributes
+      return if attrs.empty?
 
-      allowed_attributes.keys.exclude?(key)
+      attrs.keys.exclude?(key)
     end
 
-    def resolve_default_value
-      if call_proc_value && default_value.respond_to?(:call)
-        default_value.call
+    def resolve_default
+      if call && default.respond_to?(:call)
+        default.call
       else
-        default_value
+        default
       end
     end
   end

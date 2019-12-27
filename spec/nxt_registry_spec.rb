@@ -148,8 +148,12 @@ RSpec.describe NxtRegistry do
           @passengers ||= begin
             registry :from do
               nested :to do
-                nested :via, default: -> { [] }, memoize: true, call: true do
+                nested :via do
                   attrs :train, :car, :plane, :horse
+                  self.default = -> { [] }
+                  self.memoize = true
+                  call true
+                  resolver ->(value) { value }
                 end
               end
             end
@@ -172,6 +176,33 @@ RSpec.describe NxtRegistry do
 
       expect(subject.passengers.from(:a).to(:b).via(:car)).to eq(%w[Lütfi])
       expect(subject.passengers.from(:a).to(:b).via(:plane)).to eq(%w[Nils Rapha])
+    end
+  end
+
+  context 'resolver' do
+    subject do
+      klass = Class.new do
+        include NxtRegistry
+
+        def passengers
+          @passengers ||= begin
+            registry :from do
+              nested :to do
+                nested :via do
+                  resolver ->(value) { "The passenger travels via: #{value}" }
+                end
+              end
+            end
+          end
+        end
+      end
+
+      klass.new
+    end
+
+    it 'calls the resolver with the registered value' do
+      subject.passengers.from(:a).to(:b).via(:train, 'ICE')
+      expect(subject.passengers.from(:a).to(:b).via(:train)).to eq('The passenger travels via: ICE')
     end
   end
 end
