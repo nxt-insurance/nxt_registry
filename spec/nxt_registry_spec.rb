@@ -205,4 +205,23 @@ RSpec.describe NxtRegistry do
       expect(subject.passengers.from(:a).to(:b).via(:train)).to eq('The passenger travels via: ICE')
     end
   end
+
+  describe '#configure' do
+    subject do
+      NxtRegistry::Registry.new(:from)
+    end
+
+    it do
+      subject.configure do
+        nested :to do
+          nested :via do
+            resolver ->(value) { "The passenger travels via: #{value}" }
+          end
+        end
+      end
+
+      subject.from(:a).to(:b).via(:train, 'ICE')
+      expect(subject.from(:a).to(:b).via(:train)).to eq('The passenger travels via: ICE')
+    end
+  end
 end

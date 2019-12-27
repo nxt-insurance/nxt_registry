@@ -8,12 +8,14 @@ module NxtRegistry
       @memoize = options.fetch(:memoize) { true }
       @call = options.fetch(:call) { true }
       @resolver = options.fetch(:resolver) { ->(value) { value } }
+      # on_key_already_registered = options.fetch(:on_key_already_registered) { ->(key, value) { } }
+      # on_key_not_registered = options.fetch(:on_key_not_registered) { ->(key) { key} }
       @config = config
       @store = { }
       @attrs = nil
       @is_leaf = true
 
-      configure
+      configure(&config)
     end
 
     attr_reader :name
@@ -49,20 +51,6 @@ module NxtRegistry
       args.each { |name| attr(name) }
     end
 
-    %i[default memoize call resolver].each do |accessor|
-      define_method accessor do |value = Blank.new|
-        if value.is_a?(Blank)
-          instance_variable_get("@#{accessor}")
-        else
-          instance_variable_set("@#{accessor}", value)
-        end
-      end
-
-      define_method "#{accessor}=" do |value|
-        instance_variable_set("@#{accessor}", value)
-      end
-    end
-
     def register(key, value)
       __register(key, value)
     end
@@ -85,7 +73,10 @@ module NxtRegistry
 
     delegate_missing_to :store
 
-    def configure(block = config)
+    def configure(&block)
+      define_accessors
+      define_interface
+
       if block.present?
         if block.arity == 1
           instance_exec(self, &block)
@@ -93,7 +84,6 @@ module NxtRegistry
           instance_exec(&block)
         end
       end
-      define_interface
     end
 
     private
@@ -157,6 +147,22 @@ module NxtRegistry
           resolve!(key)
         else
           register!(key, value)
+        end
+      end
+    end
+
+    def define_accessors
+      %w[default memoize call resolver].each do |attribute|
+        define_singleton_method attribute do |value = Blank.new|
+          if value.is_a?(Blank)
+            instance_variable_get("@#{attribute}")
+          else
+            instance_variable_set("@#{attribute}", value)
+          end
+        end
+
+        define_singleton_method "#{attribute}=" do |value|
+          instance_variable_set("@#{attribute}", value)
         end
       end
     end
