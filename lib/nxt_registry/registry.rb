@@ -47,22 +47,55 @@ module NxtRegistry
     end
 
     def register(key, value)
+      __register(key, value)
+    end
+
+    def register!(key, value)
+      __register(key, value, raise: true)
+    end
+
+    def resolve(key)
+      __resolve(key)
+    end
+
+    def resolve!(key)
+      __resolve(key, raise: true)
+    end
+
+    def to_h
+      store
+    end
+
+    delegate_missing_to :store
+
+    private
+
+    attr_reader :namespace, :parent, :config, :store, :allowed_attributes, :call_proc_value, :memoize_value
+    attr_accessor :default_value, :is_leaf
+
+    def is_leaf?
+      @is_leaf
+    end
+
+    def __register(key, value, raise: true)
       raise ArgumentError, "Not allowed to register values in a registry that contains nested registries" unless is_leaf
       raise KeyError, "Keys are restricted to #{allowed_attributes.keys}" if attribute_not_allowed?(key)
-      raise KeyError, "Key '#{key}' already registered in registry '#{namespace}'" if store.has_key?(key)
+      raise KeyError, "Key '#{key}' already registered in registry '#{namespace}'" if store.has_key?(key) && raise
 
       store[key] = value
     end
 
-    alias []= register
-
-    def resolve(key)
+    def __resolve(key, raise: true)
       if is_leaf?
         if store.has_key?(key)
           store.fetch(key)
         else
           if default_value.is_a?(Blank)
-            raise KeyError, "Key '#{key}' not registered in registry '#{namespace}'"
+            if raise
+              raise KeyError, "Key '#{key}' not registered in registry '#{namespace}'"
+            else
+              nil
+            end
           else
             value = resolve_default_value
             return value unless memoize_value
@@ -74,21 +107,6 @@ module NxtRegistry
         # Call nested registry builder when we are not a leaf
         store[key] ||= default_value.call
       end
-    end
-
-    def to_h
-      store
-    end
-
-    alias [] resolve
-
-    private
-
-    attr_reader :namespace, :parent, :config, :store, :allowed_attributes, :call_proc_value, :memoize_value
-    attr_accessor :default_value, :is_leaf
-
-    def is_leaf?
-      @is_leaf
     end
 
     def configure
@@ -104,6 +122,16 @@ module NxtRegistry
           resolve(key)
         else
           register(key, value)
+        end
+      end
+
+      define_singleton_method "#{name}!" do |key = Blank.new, value = Blank.new|
+        return self if key.is_a?(Blank)
+
+        if value.is_a?(Blank)
+          resolve!(key)
+        else
+          register!(key, value)
         end
       end
     end
