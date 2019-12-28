@@ -224,4 +224,29 @@ RSpec.describe NxtRegistry do
       expect(subject.from(:a).to(:b).via(:train)).to eq('The passenger travels via: ICE')
     end
   end
+
+  describe '#on_key_already_registered' do
+    subject do
+      NxtRegistry::Registry.new(:test) do
+        on_key_already_registered ->(key) { raise KeyError, "Key #{key} was no good" }
+      end
+    end
+
+    it do
+      subject.register(:andy, 'superman')
+      expect { subject.register(:andy, 'superman') }.to raise_error KeyError, "Key andy was no good"
+    end
+  end
+
+  describe '#on_key_not_registered' do
+    subject do
+      NxtRegistry::Registry.new(:test) do
+        on_key_not_registered ->(key) { raise KeyError, "Key #{key} was never registered" }
+      end
+    end
+
+    it do
+      expect { subject.resolve(:andy) }.to raise_error KeyError, "Key andy was never registered"
+    end
+  end
 end

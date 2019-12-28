@@ -8,10 +8,10 @@ module NxtRegistry
       @memoize = options.fetch(:memoize) { true }
       @call = options.fetch(:call) { true }
       @resolver = options.fetch(:resolver) { ->(value) { value } }
-      # on_key_already_registered = options.fetch(:on_key_already_registered) { ->(key, value) { } }
-      # on_key_not_registered = options.fetch(:on_key_not_registered) { ->(key) { key} }
+      @on_key_already_registered = options.fetch(:on_key_already_registered) { ->(key) { raise_key_already_registered_error(key) } }
+      @on_key_not_registered = options.fetch(:on_key_not_registered) { ->(key) { raise_key_not_registered_error(key) } }
       @config = config
-      @store = { }
+      @store = {}
       @attrs = nil
       @is_leaf = true
 
@@ -98,7 +98,8 @@ module NxtRegistry
     def __register(key, value, raise: true)
       raise ArgumentError, "Not allowed to register values in a registry that contains nested registries" unless is_leaf
       raise KeyError, "Keys are restricted to #{attrs.keys}" if attribute_not_allowed?(key)
-      raise NxtRegistry::Errors::DuplicateKeyError, "Key '#{key}' already registered in registry '#{namespace}'" if store.has_key?(key) && raise
+
+      on_key_already_registered.call(key) if store.has_key?(key) && raise
 
       store[key] = value
     end
@@ -109,11 +110,9 @@ module NxtRegistry
           store.fetch(key)
         else
           if default.is_a?(Blank)
-            if raise
-              raise NxtRegistry::Errors::MissingKeyError, "Key '#{key}' not registered in registry '#{namespace}'"
-            else
-              nil
-            end
+            return unless raise
+
+            on_key_not_registered.call(key)
           else
             value = resolve_default
             return value unless memoize
@@ -152,7 +151,7 @@ module NxtRegistry
     end
 
     def define_accessors
-      %w[default memoize call resolver].each do |attribute|
+      %w[default memoize call resolver on_key_already_registered on_key_not_registered].each do |attribute|
         define_singleton_method attribute do |value = Blank.new|
           if value.is_a?(Blank)
             instance_variable_get("@#{attribute}")
@@ -179,6 +178,14 @@ module NxtRegistry
       else
         default
       end
+    end
+
+    def raise_key_already_registered_error(key)
+      raise NxtRegistry::Errors::KeyAlreadyRegisteredError, "Key '#{key}' already registered in registry '#{namespace}'"
+    end
+
+    def raise_key_not_registered_error(key)
+      raise NxtRegistry::Errors::KeyNotRegisteredError, "Key '#{key}' not registered in registry '#{namespace}'"
     end
   end
 end
