@@ -152,7 +152,10 @@ module NxtRegistry
 
     def define_accessors
       %w[default memoize call resolver on_key_already_registered on_key_not_registered].each do |attribute|
-        define_singleton_method attribute do |value = Blank.new|
+        define_singleton_method attribute do |value = Blank.new, &block|
+          # TODO: Allowing a block does not make sense formemoize and call?!
+          value = block if block
+
           if value.is_a?(Blank)
             instance_variable_get("@#{attribute}")
           else
