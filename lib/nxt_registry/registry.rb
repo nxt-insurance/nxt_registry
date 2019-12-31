@@ -11,7 +11,7 @@ module NxtRegistry
       @on_key_already_registered = options.fetch(:on_key_already_registered) { ->(key) { raise_key_already_registered_error(key) } }
       @on_key_not_registered = options.fetch(:on_key_not_registered) { ->(key) { raise_key_not_registered_error(key) } }
       @config = config
-      @store = {}
+      @store = ActiveSupport::HashWithIndifferentAccess.new
       @attrs = nil
       @is_leaf = true
 
@@ -39,7 +39,7 @@ module NxtRegistry
     end
 
     def attr(name)
-      raise KeyError, "Attribute #{name} already registered in #{namespace}" if attrs.has_key?(name)
+      raise KeyError, "Attribute #{name} already registered in #{namespace}" if attrs[name]
 
       attrs[name] = Attribute.new(name, self)
     end
@@ -99,14 +99,14 @@ module NxtRegistry
       raise ArgumentError, "Not allowed to register values in a registry that contains nested registries" unless is_leaf
       raise KeyError, "Keys are restricted to #{attrs.keys}" if attribute_not_allowed?(key)
 
-      on_key_already_registered.call(key) if store.has_key?(key) && raise
+      on_key_already_registered.call(key) if store[key] && raise
 
       store[key] = value
     end
 
     def __resolve(key, raise: true)
       value = if is_leaf?
-        if store.has_key?(key)
+        if store[key]
           store.fetch(key)
         else
           if default.is_a?(Blank)
