@@ -6,6 +6,7 @@ module NxtRegistry
       @is_leaf = true
       @namespace = [parent, self].compact.map(&:name).join('.')
       @config = config
+      @options = options
       @store = {}
       @attrs = nil
 
@@ -100,6 +101,7 @@ module NxtRegistry
     def configure(&block)
       define_accessors
       define_interface
+      attrs(*Array(options.fetch(:attrs, [])))
 
       if block.present?
         if block.arity == 1
@@ -112,7 +114,7 @@ module NxtRegistry
 
     private
 
-    attr_reader :namespace, :parent, :config, :store
+    attr_reader :namespace, :parent, :config, :store, :options
     attr_accessor :is_leaf
 
     def is_leaf?
@@ -198,6 +200,7 @@ module NxtRegistry
       @call = options.fetch(:call) { true }
       @resolver = options.fetch(:resolver, false)
       @transform_keys = options.fetch(:transform_keys) { ->(key) { key.to_s } }
+
       @on_key_already_registered = options.fetch(:on_key_already_registered) { ->(key) { raise_key_already_registered_error(key) } }
       @on_key_not_registered = options.fetch(:on_key_not_registered) { ->(key) { raise_key_not_registered_error(key) } }
     end

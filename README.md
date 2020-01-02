@@ -61,11 +61,7 @@ class MyClass
     @passengers ||= begin
       registry :from do
         nested :to do
-          nested :via do
-            attrs :train, :car, :plane, :horse
-            default -> { [] }
-            memoize true 
-            call true
+          nested :via, memoize: true, call: true, default: -> { [] }, attrs: %i[train car plane horse] do
             resolver ->(value) { value } # do something with your registered value here
             transform_keys ->(key) { key.upcase } # transform keys 
           end
