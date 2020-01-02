@@ -125,7 +125,7 @@ module NxtRegistry
       raise ArgumentError, "Not allowed to register values in a registry that contains nested registries" unless is_leaf
       raise KeyError, "Keys are restricted to #{attrs.keys}" if attribute_not_allowed?(key)
 
-      on_key_already_registered.call(key) if store[key] && raise
+      on_key_already_registered && on_key_already_registered.call(key) if store[key] && raise
 
       store[key] = value
     end
@@ -140,7 +140,7 @@ module NxtRegistry
           if default.is_a?(Blank)
             return unless raise
 
-            on_key_not_registered.call(key)
+            on_key_not_registered && on_key_not_registered.call(key)
           else
             value = resolve_default
             return value unless memoize
@@ -153,17 +153,17 @@ module NxtRegistry
         store[key] ||= default.call
       end
 
-      resolver.call(value)
-    end
+      value = if value.respond_to?(:call) && call && !value.is_a?(NxtRegistry::Registry)
+        value.call(*[value].take(value.arity))
+      else
+        value
+      end
 
-    def setup_defaults(options)
-      @default = options.fetch(:default) { Blank.new }
-      @memoize = options.fetch(:memoize) { true }
-      @call = options.fetch(:call) { true }
-      @resolver = options.fetch(:resolver) { ->(value) { value } }
-      @transform_keys = options.fetch(:transform_keys) { ->(key) { key.to_s } }
-      @on_key_already_registered = options.fetch(:on_key_already_registered) { ->(key) { raise_key_already_registered_error(key) } }
-      @on_key_not_registered = options.fetch(:on_key_not_registered) { ->(key) { raise_key_not_registered_error(key) } }
+      if resolver
+        resolver.call(value)
+      else
+        value
+      end
     end
 
     def define_interface
@@ -190,6 +190,16 @@ module NxtRegistry
           register!(key, value)
         end
       end
+    end
+
+    def setup_defaults(options)
+      @default = options.fetch(:default) { Blank.new }
+      @memoize = options.fetch(:memoize) { true }
+      @call = options.fetch(:call) { true }
+      @resolver = options.fetch(:resolver, false)
+      @transform_keys = options.fetch(:transform_keys) { ->(key) { key.to_s } }
+      @on_key_already_registered = options.fetch(:on_key_already_registered) { ->(key) { raise_key_already_registered_error(key) } }
+      @on_key_not_registered = options.fetch(:on_key_not_registered) { ->(key) { raise_key_not_registered_error(key) } }
     end
 
     def define_accessors

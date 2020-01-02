@@ -1,8 +1,7 @@
 # NxtRegistry
 
-Welcome to your new gem! In this directory, you'll find the files you need to be able to package up your Ruby library into a gem. Put your Ruby code in the file `lib/nxt_registry`. To experiment with that code, run `bin/console` for an interactive prompt.
-
-TODO: Delete this and the text above, and describe your gem
+NxtRegistry is a simple implementation of the container pattern. It allows you to register and resolve values.
+It allows to register and resolve values in nested structures by allowing to nest registries into each other.
 
 ## Installation
 
@@ -22,6 +21,38 @@ Or install it yourself as:
 
 ## Usage
 
+### Restrict attributes to a certain set
+
+Use `attrs` to restrict which attributes can be registered on a specific level.
+
+### Default values
+
+Use `default` to register a default value that will be resolved in case an attribute was not registered.
+
+### Blocks
+
+When you register a block value that can be called, tt will automatically be called when you resolve the value. 
+If that's not what you want, you can configure your registry (on each level) not to call blocks directly by defining `call false`
+
+### Memoize
+
+Values are memoized per default. Switch it off with `default false`
+
+### Resolver
+
+You can register a resolver block if you want to lay hands on your values after they have been resolved.
+
+### Transform keys
+
+NxtRegistry uses a plain ruby hash to store values internally. Per default all keys used are transformed with `&:to_s`.
+Thus you can use symbols or strings to register and resolve values. If it's not what you want, switch it off with `transform_keys false`
+or define your own key transformer by assigning a block `transform_keys ->(key) { key.upcase }`
+
+### Customize :raise_key_already_registered_error and :raise_key_not_registered_error
+
+Customize what kind of errors are being raised in case a of a key was not registered or was already registered.    
+ 
+
 ```ruby
 class MyClass
   include NxtRegistry
@@ -35,6 +66,8 @@ class MyClass
             default -> { [] }
             memoize true 
             call true
+            resolver ->(value) { value } # do something with your registered value here
+            transform_keys ->(key) { key.upcase } # transform keys 
           end
         end
       end
@@ -51,6 +84,20 @@ subject.passengers.from(:a).to(:b).via(:plane) << 'Rapha'
 subject.passengers.from(:a).to(:b).via(:plane) # => ['Nils', 'Rapha']
 
 subject.passengers.from(:a).to(:b).via(:hyperloop) # => KeyError
+
+
+class MyClass
+  extend NxtRegistry
+
+  REGISTRY = registry(:errors) do 
+    register(KeyError, ->(error) { puts 'KeyError handler' } )
+  end
+end
+
+MyClass::REGISTRY.resolve(KeyError)
+# KeyError handler
+# => nil
+
 ```
 
 ## Development

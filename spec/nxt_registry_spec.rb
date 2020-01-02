@@ -3,7 +3,9 @@ RSpec.describe NxtRegistry do
     subject do
       extend NxtRegistry
 
-      registry :developers
+      registry :developers do
+        call(false)
+      end
     end
 
     context 'when the key was not registered before' do
@@ -54,7 +56,7 @@ RSpec.describe NxtRegistry do
 
       it do
         subject.from(:pending).to(:processing).kind(:after, -> { 'after transition callback' })
-        expect(subject.from(:pending).to(:processing).kind(:after).call).to eq('after transition callback')
+        expect(subject.from(:pending).to(:processing).kind(:after)).to eq('after transition callback')
       end
     end
 
