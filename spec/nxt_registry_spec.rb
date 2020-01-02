@@ -102,7 +102,7 @@ RSpec.describe NxtRegistry do
 
       context 'when registering a key that was not defined' do
         it do
-          expect { subject.from(:a).to(:c, 'c') }.to raise_error KeyError, 'Keys are restricted to [:b]'
+          expect { subject.from(:a).to(:c, 'c') }.to raise_error KeyError, 'Keys are restricted to ["b"]'
         end
       end
     end
@@ -171,8 +171,8 @@ RSpec.describe NxtRegistry do
       subject.passengers.from(:a).to(:b).via(:plane) << 'Rapha'
 
       expect(subject.passengers.from(:a).to(:b).via(:train)).to eq(%w[Andy])
-      # HASH syntax
-      expect(subject.passengers[:a][:b][:train]).to eq(%w[Andy])
+      # Hash syntax with String keys since we transform keys to string per default
+      expect(subject.passengers['a']['b']['train']).to eq(%w[Andy])
 
       expect(subject.passengers.from(:a).to(:b).via(:car)).to eq(%w[Lütfi])
       expect(subject.passengers.from(:a).to(:b).via(:plane)).to eq(%w[Nils Rapha])

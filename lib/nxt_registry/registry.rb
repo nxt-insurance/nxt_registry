@@ -3,17 +3,20 @@ module NxtRegistry
     def initialize(name, **options, &config)
       @name = name
       @parent = options[:parent]
+      @is_leaf = true
       @namespace = [parent, self].compact.map(&:name).join('.')
+
       @default = options.fetch(:default) { Blank.new }
       @memoize = options.fetch(:memoize) { true }
       @call = options.fetch(:call) { true }
       @resolver = options.fetch(:resolver) { ->(value) { value } }
+      @transform_keys = options.fetch(:transform_keys) { ->(key) { key.to_s } }
       @on_key_already_registered = options.fetch(:on_key_already_registered) { ->(key) { raise_key_already_registered_error(key) } }
       @on_key_not_registered = options.fetch(:on_key_not_registered) { ->(key) { raise_key_not_registered_error(key) } }
+
       @config = config
-      @store = ActiveSupport::HashWithIndifferentAccess.new
+      @store = {}
       @attrs = nil
-      @is_leaf = true
 
       configure(&config)
     end
@@ -39,9 +42,10 @@ module NxtRegistry
     end
 
     def attr(name)
-      raise KeyError, "Attribute #{name} already registered in #{namespace}" if attrs[name]
+      key = transformed_key(name)
+      raise KeyError, "Attribute #{key} already registered in #{namespace}" if attrs[key]
 
-      attrs[name] = Attribute.new(name, self)
+      attrs[key] = Attribute.new(key, self)
     end
 
     def attrs(*args)
@@ -71,7 +75,35 @@ module NxtRegistry
       store
     end
 
-    delegate_missing_to :store
+    def [](key)
+      store[transformed_key(key)]
+    end
+
+    def []=(key, value)
+      store[transformed_key(key)] = value
+    end
+
+    def keys
+      store.keys.map(&method(:transformed_key))
+    end
+
+    def key?(key)
+      store.key?(transformed_key(key))
+    end
+
+    def include?(key)
+      store.include?(transformed_key(key))
+    end
+
+    def exclude?(key)
+      store.exclude?(transformed_key(key))
+    end
+
+    def fetch(key, **opts, &block)
+      store.fetch(transformed_key(key), **opts, &block)
+    end
+
+    delegate :size, :values, :each, to: :store
 
     def configure(&block)
       define_accessors
@@ -96,6 +128,8 @@ module NxtRegistry
     end
 
     def __register(key, value, raise: true)
+      key = transformed_key(key)
+
       raise ArgumentError, "Not allowed to register values in a registry that contains nested registries" unless is_leaf
       raise KeyError, "Keys are restricted to #{attrs.keys}" if attribute_not_allowed?(key)
 
@@ -105,6 +139,8 @@ module NxtRegistry
     end
 
     def __resolve(key, raise: true)
+      key = transformed_key(key)
+
       value = if is_leaf?
         if store[key]
           store.fetch(key)
@@ -132,6 +168,8 @@ module NxtRegistry
       define_singleton_method name do |key = Blank.new, value = Blank.new|
         return self if key.is_a?(Blank)
 
+        key = transformed_key(key)
+
         if value.is_a?(Blank)
           resolve(key)
         else
@@ -142,6 +180,8 @@ module NxtRegistry
       define_singleton_method "#{name}!" do |key = Blank.new, value = Blank.new|
         return self if key.is_a?(Blank)
 
+        key = transformed_key(key)
+
         if value.is_a?(Blank)
           resolve!(key)
         else
@@ -151,9 +191,9 @@ module NxtRegistry
     end
 
     def define_accessors
-      %w[default memoize call resolver on_key_already_registered on_key_not_registered].each do |attribute|
+      %w[default memoize call resolver transform_keys on_key_already_registered on_key_not_registered].each do |attribute|
         define_singleton_method attribute do |value = Blank.new, &block|
-          # TODO: Allowing a block does not make sense formemoize and call?!
+          # TODO: Allowing a block does not make sense for memoize and call?!
           value = block if block
 
           if value.is_a?(Blank)
@@ -172,7 +212,7 @@ module NxtRegistry
     def attribute_not_allowed?(key)
       return if attrs.empty?
 
-      attrs.keys.exclude?(key)
+      attrs.keys.exclude?(transformed_key(key))
     end
 
     def resolve_default
@@ -189,6 +229,17 @@ module NxtRegistry
 
     def raise_key_not_registered_error(key)
       raise NxtRegistry::Errors::KeyNotRegisteredError, "Key '#{key}' not registered in registry '#{namespace}'"
+    end
+
+    def transformed_key(key)
+      @transformed_keys ||= {}
+      @transformed_keys[key] ||= begin
+        if transform_keys && !key.is_a?(Blank)
+          transform_keys.call(key)
+        else
+          key
+        end
+      end
     end
   end
 end
