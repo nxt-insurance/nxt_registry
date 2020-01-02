@@ -4,8 +4,9 @@ module NxtRegistry
       @name = name
       @parent = options[:parent]
       @is_leaf = true
-      @namespace = [parent, self].compact.map(&:name).join('.')
+      @namespace = parent ? name.to_s.prepend("#{parent.send(:namespace)}.") : name.to_s
       @config = config
+      @options = options
       @store = {}
       @attrs = nil
 
@@ -16,6 +17,7 @@ module NxtRegistry
     attr_reader :name
 
     def nested(name, **options, &config)
+      # TODO: Ensure that nesting is included in defined attrs
       options = options.merge(parent: self)
 
       if default.is_a?(Blank)
@@ -100,6 +102,7 @@ module NxtRegistry
     def configure(&block)
       define_accessors
       define_interface
+      attrs(*Array(options.fetch(:attrs, [])))
 
       if block.present?
         if block.arity == 1
@@ -110,9 +113,15 @@ module NxtRegistry
       end
     end
 
+    def to_s
+      "Registry[#{name}] -> #{store.to_s}"
+    end
+
+    alias_method :inspect, :to_s
+
     private
 
-    attr_reader :namespace, :parent, :config, :store
+    attr_reader :namespace, :parent, :config, :store, :options
     attr_accessor :is_leaf
 
     def is_leaf?
@@ -198,6 +207,7 @@ module NxtRegistry
       @call = options.fetch(:call) { true }
       @resolver = options.fetch(:resolver, false)
       @transform_keys = options.fetch(:transform_keys) { ->(key) { key.to_s } }
+
       @on_key_already_registered = options.fetch(:on_key_already_registered) { ->(key) { raise_key_already_registered_error(key) } }
       @on_key_not_registered = options.fetch(:on_key_not_registered) { ->(key) { raise_key_not_registered_error(key) } }
     end

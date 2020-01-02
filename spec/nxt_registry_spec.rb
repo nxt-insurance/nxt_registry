@@ -83,28 +83,29 @@ RSpec.describe NxtRegistry do
 
         registry :from do
           nested :to do
-            attr :b
+            nested :via, attrs: %i[c d]
           end
         end
       end
 
-      context 'when registering a key that was defined' do
+      context 'when registering a key that was already registered' do
         it do
-          expect(subject.from(:a).to(:b, 'b')).to eq('b')
-          expect(subject.from(:a).to(:b)).to eq('b')
-          expect { subject.from(:a).to(:b, 'b') }.to raise_error KeyError,  "Key 'b' already registered in registry 'from.to'"
+          expect(subject.from(:a).to(:b).via(:c, 'c')).to eq('c')
+          expect(subject.from(:a).to(:b).via(:c)).to eq('c')
+
+          expect { subject.from(:a).to(:b).via(:c, 'c') }.to raise_error KeyError,  "Key 'c' already registered in registry 'from.to.via'"
         end
       end
 
       context 'when resolving a missing key' do
         it do
-          expect { subject.from(:a).to(:b) }.to raise_error KeyError, "Key 'b' not registered in registry 'from.to'"
+          expect { subject.from(:a).to(:b).via(:c) }.to raise_error KeyError, "Key 'c' not registered in registry 'from.to.via'"
         end
       end
 
       context 'when registering a key that was not defined' do
         it do
-          expect { subject.from(:a).to(:c, 'c') }.to raise_error KeyError, 'Keys are restricted to ["b"]'
+          expect { subject.from(:a).to(:b).via(:f, 'f') }.to raise_error KeyError, 'Keys are restricted to ["c", "d"]'
         end
       end
     end
@@ -167,14 +168,14 @@ RSpec.describe NxtRegistry do
     end
 
     it do
-      subject.passengers.from(:a).to(:b).via(:train) << 'Andy'
+      subject.passengers.from(:a).to(:b).via(:train, ['Andy']) << 'Andy'
       subject.passengers.from(:a).to(:b).via(:car) << 'Lütfi'
       subject.passengers.from(:a).to(:b).via(:plane) << 'Nils'
       subject.passengers.from(:a).to(:b).via(:plane) << 'Rapha'
 
-      expect(subject.passengers.from(:a).to(:b).via(:train)).to eq(%w[Andy])
+      expect(subject.passengers.from(:a).to(:b).via(:train)).to eq(%w[Andy Andy])
       # Hash syntax with String keys since we transform keys to string per default
-      expect(subject.passengers['a']['b']['train']).to eq(%w[Andy])
+      expect(subject.passengers['a']['b']['train']).to eq(%w[Andy Andy])
 
       expect(subject.passengers.from(:a).to(:b).via(:car)).to eq(%w[Lütfi])
       expect(subject.passengers.from(:a).to(:b).via(:plane)).to eq(%w[Nils Rapha])

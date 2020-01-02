@@ -8,11 +8,11 @@ require "nxt_registry/registry"
 require "nxt_registry/recursive_registry"
 
 module NxtRegistry
-  def registry(name, &config)
-    Registry.new(name, &config)
+  def registry(name, **options, &config)
+    Registry.new(name, **options, &config)
   end
 
-  def recursive_registry(name, &config)
-    RecursiveRegistry.new(name, &config)
+  def recursive_registry(name, **options, &config)
+    RecursiveRegistry.new(name, **options, &config)
   end
 end
