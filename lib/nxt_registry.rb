@@ -1,4 +1,4 @@
-require 'active_support/all'
+require 'active_support/core_ext'
 require "nxt_registry/version"
 require "nxt_registry/blank"
 require "nxt_registry/attribute"

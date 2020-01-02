@@ -153,17 +153,17 @@ module NxtRegistry
         store[key] ||= default.call
       end
 
-      resolver.call(value)
-    end
+      value = if value.respond_to?(:call) && call && !value.is_a?(NxtRegistry::Registry)
+        value.call(*[value].take(value.arity))
+      else
+        value
+      end
 
-    def setup_defaults(options)
-      @default = options.fetch(:default) { Blank.new }
-      @memoize = options.fetch(:memoize) { true }
-      @call = options.fetch(:call) { true }
-      @resolver = options.fetch(:resolver) { ->(value) { value } }
-      @transform_keys = options.fetch(:transform_keys) { ->(key) { key.to_s } }
-      @on_key_already_registered = options.fetch(:on_key_already_registered) { ->(key) { raise_key_already_registered_error(key) } }
-      @on_key_not_registered = options.fetch(:on_key_not_registered) { ->(key) { raise_key_not_registered_error(key) } }
+      if resolver
+        resolver.call(value)
+      else
+        value
+      end
     end
 
     def define_interface
@@ -190,6 +190,16 @@ module NxtRegistry
           register!(key, value)
         end
       end
+    end
+
+    def setup_defaults(options)
+      @default = options.fetch(:default) { Blank.new }
+      @memoize = options.fetch(:memoize) { true }
+      @call = options.fetch(:call) { true }
+      @resolver = options.fetch(:resolver, false)
+      @transform_keys = options.fetch(:transform_keys) { ->(key) { key.to_s } }
+      @on_key_already_registered = options.fetch(:on_key_already_registered) { ->(key) { raise_key_already_registered_error(key) } }
+      @on_key_not_registered = options.fetch(:on_key_not_registered) { ->(key) { raise_key_not_registered_error(key) } }
     end
 
     def define_accessors
