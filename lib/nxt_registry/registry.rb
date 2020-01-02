@@ -5,19 +5,11 @@ module NxtRegistry
       @parent = options[:parent]
       @is_leaf = true
       @namespace = [parent, self].compact.map(&:name).join('.')
-
-      @default = options.fetch(:default) { Blank.new }
-      @memoize = options.fetch(:memoize) { true }
-      @call = options.fetch(:call) { true }
-      @resolver = options.fetch(:resolver) { ->(value) { value } }
-      @transform_keys = options.fetch(:transform_keys) { ->(key) { key.to_s } }
-      @on_key_already_registered = options.fetch(:on_key_already_registered) { ->(key) { raise_key_already_registered_error(key) } }
-      @on_key_not_registered = options.fetch(:on_key_not_registered) { ->(key) { raise_key_not_registered_error(key) } }
-
       @config = config
       @store = {}
       @attrs = nil
 
+      setup_defaults(options)
       configure(&config)
     end
 
@@ -164,6 +156,16 @@ module NxtRegistry
       resolver.call(value)
     end
 
+    def setup_defaults(options)
+      @default = options.fetch(:default) { Blank.new }
+      @memoize = options.fetch(:memoize) { true }
+      @call = options.fetch(:call) { true }
+      @resolver = options.fetch(:resolver) { ->(value) { value } }
+      @transform_keys = options.fetch(:transform_keys) { ->(key) { key.to_s } }
+      @on_key_already_registered = options.fetch(:on_key_already_registered) { ->(key) { raise_key_already_registered_error(key) } }
+      @on_key_not_registered = options.fetch(:on_key_not_registered) { ->(key) { raise_key_not_registered_error(key) } }
+    end
+
     def define_interface
       define_singleton_method name do |key = Blank.new, value = Blank.new|
         return self if key.is_a?(Blank)
@@ -232,8 +234,8 @@ module NxtRegistry
     end
 
     def transformed_key(key)
-      @transformed_keys ||= {}
-      @transformed_keys[key] ||= begin
+      @transformed_key ||= {}
+      @transformed_key[key] ||= begin
         if transform_keys && !key.is_a?(Blank)
           transform_keys.call(key)
         else
