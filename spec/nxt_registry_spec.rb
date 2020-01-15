@@ -252,4 +252,21 @@ RSpec.describe NxtRegistry do
       expect { subject.resolve(:andy) }.to raise_error KeyError, "Key andy was never registered"
     end
   end
+
+  describe '#clone' do
+    subject do
+      extend NxtRegistry
+
+      registry :developers do
+        call(false)
+      end
+    end
+
+    let(:clone) { subject.clone }
+
+    it 'clones the store' do
+      expect { clone.register(:luetfi, 'legend') }.to_not change { subject.developers.to_h }
+      expect { subject.register(:rapha, 'dog') }.to_not change { clone.developers.to_h }
+    end
+  end
 end

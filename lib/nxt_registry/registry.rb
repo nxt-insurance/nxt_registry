@@ -267,6 +267,7 @@ module NxtRegistry
     def initialize_copy(original)
       super
       @store = original.send(:store).deep_dup
+      @options = original.send(:options).deep_dup
     end
   end
 end
