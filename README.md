@@ -1,3 +1,5 @@
+[![CircleCI](https://circleci.com/gh/nxt-insurance/nxt_registry.svg?style=svg)](https://circleci.com/gh/nxt-insurance/nxt_registry)
+
 # NxtRegistry
 
 NxtRegistry is a simple implementation of the container pattern. It allows you to register and resolve values in nested 
