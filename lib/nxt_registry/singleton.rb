@@ -1,6 +1,6 @@
 module NxtRegistry
-  class Singleton
-    def self.inherited(subclass)
+  module Singleton
+    def self.extended(subclass)
       subclass.singleton_class.class_eval do
         default_name = (subclass.name || 'registry')
 
@@ -9,6 +9,8 @@ module NxtRegistry
         end
 
         delegate_missing_to :registry
+
+        define_method(:instance) { registry }
       end
     end
   end

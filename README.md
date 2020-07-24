@@ -23,6 +23,8 @@ Or install it yourself as:
 
 ## Usage
 
+### Instance Level
+
 ```ruby
 class Example
   include NxtRegistry
@@ -75,22 +77,43 @@ example.passengers.from(:a).to(:b).via(:plane) # => ['Nils', 'Rapha']
 
 ```
 
+Alternatively you can create an instance of NxtRegistry::Registry.new('name', **options, &config)
+
 ```ruby
-class SimpleExample < NxtRegistry::Singleton
-  # By including NxtRegistry::Singleton you get a super simple class level interface to an underlying instance of a registry  
+registry = NxtRegistry::Registry.new do
+  register(:andy, 'Andy')
+  register(:anthony, 'Anthony')
+  register(:aki, 'Aki')
+end
+
+registry.resolve(:aki) # => 'Aki'
+
+```
+
+### Class Level
+
+```ruby
+class SimpleExample
+  # By extending NxtRegistry::Singleton you get a super simple class level interface to an underlying instance of a :registry
+  extend NxtRegistry::Singleton
+  
   registry do
     # procs are called directly if not defined otherwise 
     register(KeyError, ->(error) { puts 'KeyError handler' } )
     register(ArgumentError, ->(error) { puts 'ArgumentError handler' } )
+    # Custom key error handlers
+    on_key_already_registered ->(key) { raise "Key was already registered dude: #{key}" }
+    on_key_not_registered ->(key) { raise "Key was never registered dude: #{key}" }
   end
 end
   
 SimpleExample.resolve(KeyError)
+# Alternatively: SimpleExample.registry.resolve(KeyError) 
+# Or: SimpleExample.instance.resolve(KeyError) 
 # KeyError handler
 # => nil
 
 ```
-
 
 ```ruby
 class OtherExample
@@ -131,7 +154,7 @@ registry :example, default: ->(value) { 'default' }
 
 ### Blocks
 
-When you register a block value that can be called, tt will automatically be called when you resolve the value. 
+When you register a block value that can be called, it will automatically be called when you resolve the value. 
 If that's not what you want, you can configure your registry (on each level) not to call blocks directly by defining `call false`
 
 ```ruby
@@ -142,7 +165,7 @@ end
 
 ### Memoize
 
-Values are memoized per default. Switch it off with `default false`
+Values are memoized per default. Switch it off with `memoize: false`
 
 ```ruby
 registry :example, memoize: false do
@@ -159,7 +182,8 @@ registry.resolve(:one)
 
 ### Resolver
 
-You can register a resolver block if you want to lay hands on your values after they have been resolved.
+You can register a resolver block if you want to lay hands on your values after they have been resolved. 
+A resolver can be anything that implements `:call` to which the value is passed.  
 
 ```ruby
 registry :example do
@@ -190,7 +214,7 @@ registry.resolve('BOMBSHELL')
 ### Customize registry errors
 
 You can also customize what kind of errors are being raised in case a of a key was not registered or was already registered.
-by providing values for `raise_key_already_registered_error` and `raise_key_not_registered_error`
+by providing blocks or a handler responding to :call for `on_key_already_registered` and `on_key_already_registered`
 
 ## Development
 

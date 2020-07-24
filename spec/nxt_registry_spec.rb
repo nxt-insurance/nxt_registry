@@ -144,7 +144,9 @@ RSpec.describe NxtRegistry do
 
   context 'singleton registry' do
     subject do
-      Class.new(NxtRegistry::Singleton) do
+      Class.new do
+        extend NxtRegistry::Singleton
+
         registry :from do
           nested :to do
             nested :via do
@@ -163,7 +165,7 @@ RSpec.describe NxtRegistry do
       subject.from(:a).to(:b).via(:train, ['Andy']) << 'Andy'
       subject.from(:a).to(:b).via(:car) << 'Lütfi'
       subject.from(:a).to(:b).via(:plane) << 'Nils'
-      subject.from(:a).to(:b).via(:plane) << 'Rapha'
+      subject.instance.from(:a).to(:b).via(:plane) << 'Rapha'
     end
 
     it do
@@ -171,7 +173,7 @@ RSpec.describe NxtRegistry do
       expect(subject['a']['b']['train']).to eq(%w[Andy Andy])
 
       expect(subject.from(:a).to(:b).via(:car)).to eq(%w[Lütfi])
-      expect(subject.from(:a).to(:b).via(:plane)).to eq(%w[Nils Rapha])
+      expect(subject.instance.from(:a).to(:b).via(:plane)).to eq(%w[Nils Rapha])
     end
   end
 

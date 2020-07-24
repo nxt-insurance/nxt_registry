@@ -1,6 +1,6 @@
 module NxtRegistry
   class Registry
-    def initialize(name, **options, &config)
+    def initialize(name = object_id.to_s, **options, &config)
       @name = name
       @parent = options[:parent]
       @is_leaf = true
@@ -133,7 +133,6 @@ module NxtRegistry
 
       raise ArgumentError, "Not allowed to register values in a registry that contains nested registries" unless is_leaf
       raise KeyError, "Keys are restricted to #{attrs.keys}" if attribute_not_allowed?(key)
-
       on_key_already_registered && on_key_already_registered.call(key) if store[key] && raise
 
       store[key] = value
