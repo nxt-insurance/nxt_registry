@@ -159,15 +159,15 @@ RSpec.describe NxtRegistry do
       end
     end
 
-    it do
-      subject
+    before do
       subject.from(:a).to(:b).via(:train, ['Andy']) << 'Andy'
       subject.from(:a).to(:b).via(:car) << 'Lütfi'
       subject.from(:a).to(:b).via(:plane) << 'Nils'
       subject.from(:a).to(:b).via(:plane) << 'Rapha'
+    end
 
+    it do
       expect(subject.from(:a).to(:b).via(:train)).to eq(%w[Andy Andy])
-      # Hash syntax with String keys since we transform keys to string per default
       expect(subject['a']['b']['train']).to eq(%w[Andy Andy])
 
       expect(subject.from(:a).to(:b).via(:car)).to eq(%w[Lütfi])
@@ -200,12 +200,14 @@ RSpec.describe NxtRegistry do
       klass.new
     end
 
-    it do
+    before do
       subject.passengers.from(:a).to(:b).via(:train, ['Andy']) << 'Andy'
       subject.passengers.from(:a).to(:b).via(:car) << 'Lütfi'
       subject.passengers.from(:a).to(:b).via(:plane) << 'Nils'
       subject.passengers.from(:a).to(:b).via(:plane) << 'Rapha'
+    end
 
+    it do
       expect(subject.passengers.from(:a).to(:b).via(:train)).to eq(%w[Andy Andy])
       # Hash syntax with String keys since we transform keys to string per default
       expect(subject.passengers['a']['b']['train']).to eq(%w[Andy Andy])
