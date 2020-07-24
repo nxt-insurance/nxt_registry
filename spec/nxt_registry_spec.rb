@@ -142,6 +142,39 @@ RSpec.describe NxtRegistry do
     end
   end
 
+  context 'singleton registry' do
+    subject do
+      Class.new(NxtRegistry::Singleton) do
+        registry :from do
+          nested :to do
+            nested :via do
+              attrs :train, :car, :plane, :horse
+              self.default = -> { [] }
+              self.memoize = true
+              call true
+              resolver ->(value) { value }
+            end
+          end
+        end
+      end
+    end
+
+    it do
+      subject
+      subject.from(:a).to(:b).via(:train, ['Andy']) << 'Andy'
+      subject.from(:a).to(:b).via(:car) << 'Lütfi'
+      subject.from(:a).to(:b).via(:plane) << 'Nils'
+      subject.from(:a).to(:b).via(:plane) << 'Rapha'
+
+      expect(subject.from(:a).to(:b).via(:train)).to eq(%w[Andy Andy])
+      # Hash syntax with String keys since we transform keys to string per default
+      expect(subject['a']['b']['train']).to eq(%w[Andy Andy])
+
+      expect(subject.from(:a).to(:b).via(:car)).to eq(%w[Lütfi])
+      expect(subject.from(:a).to(:b).via(:plane)).to eq(%w[Nils Rapha])
+    end
+  end
+
   context 'example from README' do
     subject do
       klass = Class.new do

@@ -75,6 +75,22 @@ example.passengers.from(:a).to(:b).via(:plane) # => ['Nils', 'Rapha']
 
 ```
 
+```ruby
+class SimpleExample < NxtRegistry::Singleton
+  # By including NxtRegistry::Singleton you get a super simple class level interface to an underlying instance of a registry  
+  registry do
+    # procs are called directly if not defined otherwise 
+    register(KeyError, ->(error) { puts 'KeyError handler' } )
+    register(ArgumentError, ->(error) { puts 'ArgumentError handler' } )
+  end
+end
+  
+SimpleExample.resolve(KeyError)
+# KeyError handler
+# => nil
+
+```
+
 
 ```ruby
 class OtherExample
