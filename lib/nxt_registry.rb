@@ -6,6 +6,7 @@ require "nxt_registry/errors"
 require "nxt_registry/nested_registry_builder"
 require "nxt_registry/registry"
 require "nxt_registry/recursive_registry"
+require "nxt_registry/singleton"
 
 module NxtRegistry
   def registry(name, **options, &config)
