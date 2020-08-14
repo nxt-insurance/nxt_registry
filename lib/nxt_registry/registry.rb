@@ -4,7 +4,7 @@ module NxtRegistry
       @name = name
       @parent = options[:parent]
       @is_leaf = true
-      @namespace = parent ? name.to_s.prepend("#{parent.send(:namespace)}.") : name.to_s
+      @namespace = build_namespace
       @config = config
       @options = options
       @store = {}
@@ -29,9 +29,9 @@ module NxtRegistry
 
         default.call
       elsif default.is_a?(NestedRegistryBuilder)
-        raise ArgumentError, "Multiple nestings on the same level"
+        raise ArgumentError, 'Multiple nestings on the same level'
       else
-        raise ArgumentError, "Default values cannot be defined on registries that nest others"
+        raise ArgumentError, 'Default values cannot be defined on registries that nest others'
       end
     end
 
@@ -93,8 +93,8 @@ module NxtRegistry
       store.exclude?(transformed_key(key))
     end
 
-    def fetch(key, **opts, &block)
-      store.fetch(transformed_key(key), **opts, &block)
+    def fetch(key, *args, &block)
+      store.fetch(transformed_key(key), *args, &block)
     end
 
     delegate :size, :values, :each, to: :store
@@ -131,8 +131,9 @@ module NxtRegistry
     def __register(key, value, raise: true)
       key = transformed_key(key)
 
-      raise ArgumentError, "Not allowed to register values in a registry that contains nested registries" unless is_leaf
+      raise ArgumentError, 'Not allowed to register values in a registry that contains nested registries' unless is_leaf
       raise KeyError, "Keys are restricted to #{attrs.keys}" if attribute_not_allowed?(key)
+
       on_key_already_registered && on_key_already_registered.call(key) if store[key] && raise
 
       store[key] = value
@@ -214,7 +215,6 @@ module NxtRegistry
     def define_accessors
       %w[default memoize call resolver transform_keys on_key_already_registered on_key_not_registered].each do |attribute|
         define_singleton_method attribute do |value = Blank.new, &block|
-          # TODO: Allowing a block does not make sense for memoize and call?!
           value = block if block
 
           if value.is_a?(Blank)
@@ -267,6 +267,10 @@ module NxtRegistry
       super
       @store = original.send(:store).deep_dup
       @options = original.send(:options).deep_dup
+    end
+
+    def build_namespace
+      parent ? name.to_s.prepend("#{parent.send(:namespace)}.") : name.to_s
     end
   end
 end
