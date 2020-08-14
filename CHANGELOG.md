@@ -1,6 +1,6 @@
 # v0.2.1 2020-08-14
 
-### Added
+### Fixed
  
 - Fixed Registry#fetch to raise key error in case of missing key
 
