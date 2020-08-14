@@ -24,6 +24,30 @@ RSpec.describe NxtRegistry do
         }.to raise_error KeyError, "Key 'callback' already registered in registry 'developers'"
       end
     end
+
+    describe '#fetch' do
+      context 'when the key is missing' do
+        context 'and no default is given' do
+          it 'raises an error' do
+            expect { subject.fetch(:missing) }.to raise_error KeyError
+          end
+        end
+
+        context 'and a default is given' do
+          context 'default value' do
+            it 'returns the default' do
+              expect(subject.fetch(:missing, 'not missing')).to eq('not missing')
+            end
+          end
+
+          context 'default block' do
+            it 'returns the default' do
+              expect(subject.fetch(:missing) { 'not missing' }).to eq('not missing')
+            end
+          end
+        end
+      end
+    end
   end
 
   context 'nested registry' do
