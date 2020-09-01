@@ -50,6 +50,28 @@ RSpec.describe NxtRegistry do
     end
   end
 
+  context 'registering nested registries' do
+    subject do
+      extend NxtRegistry
+
+      registry :developers do
+        registry(:frontend) do
+          register(:igor, 'Igor')
+          register(:ben, 'Ben')
+        end
+
+        registry(:backend) do
+          register(:rapha, 'Rapha')
+          register(:aki, 'Aki')
+        end
+      end
+    end
+
+    it do
+      binding.pry
+    end
+  end
+
   context 'nested registry' do
     context 'when called by its name' do
       subject do

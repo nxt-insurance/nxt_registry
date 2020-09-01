@@ -17,7 +17,6 @@ module NxtRegistry
     attr_reader :name
 
     def nested(name, **options, &config)
-      # TODO: Ensure that nesting is included in defined attrs
       options = options.merge(parent: self)
 
       if default.is_a?(Blank)
@@ -33,6 +32,11 @@ module NxtRegistry
       else
         raise ArgumentError, 'Default values cannot be defined on registries that nest others'
       end
+    end
+
+    def registry(name, **options, &config)
+      options = options.merge(parent: self)
+      register(name, Registry.new(name, **options, &config))
     end
 
     def attr(name)
