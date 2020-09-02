@@ -68,7 +68,9 @@ RSpec.describe NxtRegistry do
     end
 
     it do
-      binding.pry
+      expect(subject.resolve(:frontend).resolve(:igor)).to eq('Igor')
+      expect(subject.resolve(:backend).resolve(:rapha)).to eq('Rapha')
+      expect(subject.developers(:frontend).frontend(:igor)).to eq('Igor')
     end
   end
 
