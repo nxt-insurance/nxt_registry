@@ -2,7 +2,7 @@
 
 # NxtRegistry
 
-NxtRegistry is a simple implementation of the container pattern. It allows you to register and resolve values in nested 
+NxtRegistry is a simple implementation of the container pattern. It allows you to register and resolve values in layered 
 structures by allowing nesting registries into each other. In theory this can be indefinitely deep.
 
 ## Installation
@@ -29,52 +29,19 @@ Or install it yourself as:
 class Example
   include NxtRegistry
   
-  def passengers
-    @passengers ||= begin
-      registry :from do
-        nested :to do
-          nested :via, memoize: true, call: true, default: -> { [] } do
-            attrs %i[train car plane horse] # restrict the attributes that can be registered
-            resolver ->(value) { value } # do something with your registered value here
-            transform_keys ->(key) { key.upcase } # transform keys 
-          end
-        end
+  def languages
+    @languages ||= begin
+      registry :languages do
+        register(:ruby, 'Stone')
+        register(:python, 'Snake')
+        register(:javascript, 'undefined')
       end
     end
   end
 end
 
 example = Example.new
-# Based on the naming of the registry and its nesting you are provided with a simple interface 
-# that allows you to resolve and register values by name
- 
-# Register an array with a value by calling the accessor with a key, value pair 
-example.passengers.from(:a).to(:b).via(:train, ['Andy']) # => ['Andy']
-
-# In case you try to register the same key again you will get an error
-example.passengers.from(:a).to(:b).via(:train, ['Andy'])
-# => NxtRegistry::Errors::KeyAlreadyRegisteredError 
-# (Key 'train' already registered in registry 'from.to.via')
-# NxtRegistry::Errors::KeyAlreadyRegisteredError inherits from KeyError
-
-# You can force values on the registry by using the bang method
-example.passengers.from(:a).to(:b).via!(:train, ['Andreas'])  
-
-# Similarly you can try to resolve values softly 
-# (meaning no KeyNotRegisteredError will be raised when nothing was registered)
-example.passengers.from(:a).to(:b).via!(:train) 
-# Since there is a default defined for this registry, it does not make any sense 
-#  since there is always a value. But you get the point...
-
-# Resolve values by calling the accessor with the key only
-# In this case the default is returned because nothing was registered yet 
-example.passengers.from(:a).to(:b).via(:hyperloop) # []
-
-# Appending values to a default array
-example.passengers.from(:a).to(:b).via(:car) << 'Lütfi' # => ['Lütif']
-example.passengers.from(:a).to(:b).via(:plane) += %w[Nils Rapha]
-example.passengers.from(:a).to(:b).via(:plane) # => ['Nils', 'Rapha']
-
+example.languages.resolve(:ruby) # => 'Stone'
 ```
 
 Alternatively you can create an instance of NxtRegistry::Registry.new('name', **options, &config)
@@ -92,16 +59,16 @@ registry.resolve(:aki) # => 'Aki'
 
 ### Class Level
 
+By extending NxtRegistry::Singleton you get a super simple class level interface to an underlying instance of a :registry.
+
 ```ruby
 class SimpleExample
-  # By extending NxtRegistry::Singleton you get a super simple class level interface to an underlying instance of a :registry
   extend NxtRegistry::Singleton
   
   registry do
-    # procs are called directly if not defined otherwise 
     register(KeyError, ->(error) { puts 'KeyError handler' } )
     register(ArgumentError, ->(error) { puts 'ArgumentError handler' } )
-    # Custom key error handlers
+    
     on_key_already_registered ->(key) { raise "Key was already registered dude: #{key}" }
     on_key_not_registered ->(key) { raise "Key was never registered dude: #{key}" }
   end
@@ -118,10 +85,8 @@ SimpleExample.resolve(KeyError)
 ```ruby
 class OtherExample
   extend NxtRegistry
-
-  # By passing a block to :registry you can directly register your values inline 
+ 
   REGISTRY = registry(:errors) do
-    # procs are called directly if not defined otherwise 
     register(KeyError, ->(error) { puts 'KeyError handler' } )
     register(ArgumentError, ->(error) { puts 'ArgumentError handler' } )
   end
@@ -135,6 +100,29 @@ OtherExample::REGISTRY.resolve(KeyError)
 # => nil
 
 ```
+### Nested registries
+
+You can also simply nest registries into each other
+
+```ruby
+class Nested
+  extend NxtRegistry::Singleton
+
+  registry :developers do
+    registry(:frontend) do
+      register(:igor, 'Igor')
+      register(:ben, 'Ben')
+    end
+    
+    registry(:backend) do
+      register(:rapha, 'Rapha')
+      register(:aki, 'Aki')
+    end
+  end
+end
+```
+
+Nested.registry.resolve(:frontend).resolve(:igor)
 
 ### Restrict attributes to a certain set
 
