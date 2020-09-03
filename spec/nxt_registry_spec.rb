@@ -55,12 +55,12 @@ RSpec.describe NxtRegistry do
       extend NxtRegistry
 
       registry :developers do
-        registry(:frontend) do
+        register(:frontend) do
           register(:igor, 'Igor')
           register(:ben, 'Ben')
         end
 
-        registry(:backend) do
+        register(:backend, default: -> { 'Rubyist' }) do
           register(:rapha, 'Rapha')
           register(:aki, 'Aki')
         end
@@ -71,6 +71,9 @@ RSpec.describe NxtRegistry do
       expect(subject.resolve(:frontend).resolve(:igor)).to eq('Igor')
       expect(subject.resolve(:backend).resolve(:rapha)).to eq('Rapha')
       expect(subject.developers(:frontend).frontend(:igor)).to eq('Igor')
+
+      expect(subject.resolve_path(:backend, :other)).to eq('Rubyist')
+      expect { subject.resolve_path(:fronted, :other) }.to raise_error(KeyError)
     end
   end
 

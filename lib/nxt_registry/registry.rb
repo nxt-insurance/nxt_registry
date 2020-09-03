@@ -39,6 +39,11 @@ module NxtRegistry
       register(name, Registry.new(name, **options, &config))
     end
 
+    def registry!(name, **options, &config)
+      options = options.merge(parent: self)
+      register!(name, Registry.new(name, **options, &config))
+    end
+
     def attr(name)
       key = transformed_key(name)
       raise KeyError, "Attribute #{key} already registered in #{namespace}" if attrs[key]
@@ -53,16 +58,44 @@ module NxtRegistry
       args.each { |name| attr(name) }
     end
 
-    def register(key, value)
-      __register(key, value, raise: true)
+    def register(key = Blank.new, value = Blank.new, **options, &block)
+      if block_given?
+        if value.is_a?(Blank)
+          registry(key, **options, &block)
+        else
+          raise ArgumentError, 'TODO'
+        end
+      else
+        __register(key, value, raise: true)
+      end
     end
 
-    def register!(key, value)
-      __register(key, value, raise: false)
+    def register!(key = Blank.new, value = Blank.new, **options, &block)
+      if block_given?
+        if value.is_a?(Blank)
+          registry!(key, **options, &block)
+        else
+          raise ArgumentError, 'TODO'
+        end
+      else
+        __register(key, value, raise: false)
+      end
     end
 
     def resolve(key)
       __resolve(key, raise: true)
+    end
+
+    def resolve_path(*keys)
+      keys.inject(self) do |current_registry, key|
+        current_registry.resolve(key)
+      end
+    end
+
+    def resolve_path!(*keys)
+      keys.inject(self) do |current_registry, key|
+        current_registry.resolve!(key)
+      end
     end
 
     def resolve!(key)
