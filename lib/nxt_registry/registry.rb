@@ -135,11 +135,7 @@ module NxtRegistry
     def __register(key, value, raise: true)
       key = transformed_key(key)
 
-<<<<<<< HEAD
-      raise ArgumentError, 'Not allowed to register values in a registry that contains nested registries' unless is_leaf
-=======
       raise ArgumentError, "Not allowed to register values in a registry that contains layered registries" unless is_leaf
->>>>>>> WIP
       raise KeyError, "Keys are restricted to #{attrs.keys}" if attribute_not_allowed?(key)
 
       on_key_already_registered && on_key_already_registered.call(key) if store[key] && raise
