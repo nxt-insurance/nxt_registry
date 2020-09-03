@@ -109,6 +109,7 @@ RSpec.describe NxtRegistry do
       it do
         subject.from(:pending).to(:processing).kind(:after, -> { 'after transition callback' })
         expect(subject.from(:pending).to(:processing).kind(:after)).to eq('after transition callback')
+        expect(subject.resolve_path(:pending, :processing, :after)).to eq('after transition callback')
 
         expect(subject.from(:pending).to(:injected)).to eq('ha ha ha')
       end
@@ -146,6 +147,7 @@ RSpec.describe NxtRegistry do
         it do
           expect(subject.from(:a).to(:b).via(:c, 'c')).to eq('c')
           expect(subject.from(:a).to(:b).via(:c)).to eq('c')
+          expect(subject.resolve_path(:a, :b, :c)).to eq('c')
 
           expect { subject.from(:a).to(:b).via(:c, 'c') }.to raise_error KeyError,  "Key 'c' already registered in registry 'from.to.via'"
         end
