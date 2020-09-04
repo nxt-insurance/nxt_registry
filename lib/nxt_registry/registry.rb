@@ -126,7 +126,7 @@ module NxtRegistry
       store.fetch(transformed_key(key), *args, &block)
     end
 
-    delegate :size, :values, :each, to: :store
+    delegate :size, :values, :each, :freeze, to: :store
 
     def configure(&block)
       define_accessors
