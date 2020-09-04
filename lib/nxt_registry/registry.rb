@@ -90,7 +90,7 @@ module NxtRegistry
 
     def resolve!(*keys)
       keys.inject(self) do |current_registry, key|
-        current_registry.send(:__resolve, key, raise: false)
+          current_registry.send(:__resolve, key, raise: false) || break
       end
     end
 
@@ -172,7 +172,7 @@ module NxtRegistry
       key = transformed_key(key)
 
       value = if is_leaf?
-        if store[key]
+        if store.key?(key)
           store.fetch(key)
         else
           if default.is_a?(Blank)
