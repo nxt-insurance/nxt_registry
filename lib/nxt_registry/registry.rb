@@ -28,7 +28,7 @@ module NxtRegistry
 
         default.call
       elsif default.is_a?(NestedRegistryBuilder)
-        raise ArgumentError, "Multiple nestings on the same level"
+        raise ArgumentError, 'Multiple nestings on the same level'
       else
         raise ArgumentError, 'Default values cannot be defined on registries that nest others'
       end
@@ -63,7 +63,7 @@ module NxtRegistry
         if value.is_a?(Blank)
           registry(key, **options, &block)
         else
-          raise ArgumentError, 'TODO'
+          raise_register_argument_error
         end
       else
         __register(key, value, raise: true)
@@ -75,7 +75,7 @@ module NxtRegistry
         if value.is_a?(Blank)
           registry!(key, **options, &block)
         else
-          raise ArgumentError, 'TODO'
+          raise_register_argument_error
         end
       else
         __register(key, value, raise: false)
@@ -300,6 +300,10 @@ module NxtRegistry
 
     def build_namespace
       parent ? name.to_s.prepend("#{parent.send(:namespace)}.") : name.to_s
+    end
+
+    def raise_register_argument_error
+      raise ArgumentError, 'Either provide a key value pair or a block to register'
     end
   end
 end
