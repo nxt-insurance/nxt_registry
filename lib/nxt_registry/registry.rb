@@ -82,24 +82,16 @@ module NxtRegistry
       end
     end
 
-    def resolve(key)
-      __resolve(key, raise: true)
-    end
-
-    def resolve_path(*keys)
+    def resolve(*keys)
       keys.inject(self) do |current_registry, key|
-        current_registry.resolve(key)
+        current_registry.send(:__resolve, key, raise: true)
       end
     end
 
-    def resolve_path!(*keys)
+    def resolve!(*keys)
       keys.inject(self) do |current_registry, key|
-        current_registry.resolve!(key)
+        current_registry.send(:__resolve, key, raise: false)
       end
-    end
-
-    def resolve!(key)
-      __resolve(key, raise: false)
     end
 
     def to_h

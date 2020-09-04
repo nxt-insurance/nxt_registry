@@ -72,8 +72,8 @@ RSpec.describe NxtRegistry do
       expect(subject.resolve(:backend).resolve(:rapha)).to eq('Rapha')
       expect(subject.developers(:frontend).frontend(:igor)).to eq('Igor')
 
-      expect(subject.resolve_path(:backend, :other)).to eq('Rubyist')
-      expect { subject.resolve_path(:fronted, :other) }.to raise_error(KeyError)
+      expect(subject.resolve(:backend, :other)).to eq('Rubyist')
+      expect { subject.resolve(:fronted, :other) }.to raise_error(KeyError)
     end
   end
 
@@ -109,7 +109,7 @@ RSpec.describe NxtRegistry do
       it do
         subject.from(:pending).to(:processing).kind(:after, -> { 'after transition callback' })
         expect(subject.from(:pending).to(:processing).kind(:after)).to eq('after transition callback')
-        expect(subject.resolve_path(:pending, :processing, :after)).to eq('after transition callback')
+        expect(subject.resolve(:pending, :processing, :after)).to eq('after transition callback')
 
         expect(subject.from(:pending).to(:injected)).to eq('ha ha ha')
       end
@@ -147,7 +147,7 @@ RSpec.describe NxtRegistry do
         it do
           expect(subject.from(:a).to(:b).via(:c, 'c')).to eq('c')
           expect(subject.from(:a).to(:b).via(:c)).to eq('c')
-          expect(subject.resolve_path(:a, :b, :c)).to eq('c')
+          expect(subject.resolve(:a, :b, :c)).to eq('c')
 
           expect { subject.from(:a).to(:b).via(:c, 'c') }.to raise_error KeyError,  "Key 'c' already registered in registry 'from.to.via'"
         end
