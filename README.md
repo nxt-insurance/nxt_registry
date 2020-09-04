@@ -2,7 +2,7 @@
 
 # NxtRegistry
 
-NxtRegistry is a simple implementation of the container pattern. It allows you to register and resolve values in layered 
+NxtRegistry is a simple implementation of the container pattern. It allows you to register and resolve values in nested 
 structures by allowing nesting registries into each other. In theory this can be indefinitely deep.
 
 ## Installation

@@ -16,18 +16,18 @@ module NxtRegistry
 
     attr_reader :name
 
-    def layered(name, **options, &config)
+    def nested(name, **options, &config)
       options = options.merge(parent: self)
 
       if default.is_a?(Blank)
         self.is_leaf = false
 
-        self.default = LayeredRegistryBuilder.new do
+        self.default = NestedRegistryBuilder.new do
           Registry.new(name, **options, &config)
         end
 
         default.call
-      elsif default.is_a?(LayeredRegistryBuilder)
+      elsif default.is_a?(NestedRegistryBuilder)
         raise ArgumentError, "Multiple nestings on the same level"
       else
         raise ArgumentError, 'Default values cannot be defined on registries that nest others'
@@ -160,7 +160,7 @@ module NxtRegistry
     def __register(key, value, raise: true)
       key = transformed_key(key)
 
-      raise ArgumentError, "Not allowed to register values in a registry that contains layered registries" unless is_leaf
+      raise ArgumentError, "Not allowed to register values in a registry that contains nested registries" unless is_leaf
       raise KeyError, "Keys are restricted to #{attrs.keys}" if attribute_not_allowed?(key)
 
       on_key_already_registered && on_key_already_registered.call(key) if store[key] && raise
@@ -187,7 +187,7 @@ module NxtRegistry
           end
         end
       else
-        # Call layered registry builder when we are not a leaf
+        # Call nested registry builder when we are not a leaf
         store[key] ||= default.call
       end
 

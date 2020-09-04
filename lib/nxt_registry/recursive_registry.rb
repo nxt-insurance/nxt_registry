@@ -8,7 +8,7 @@ module NxtRegistry
       @config = config
 
       super(name, **options, &config)
-      set_layered_builder_as_default
+      set_nested_builder_as_default
     end
 
     attr_reader :name
@@ -17,8 +17,8 @@ module NxtRegistry
 
     attr_reader :options, :config, :level
 
-    def set_layered_builder_as_default
-      self.default = LayeredRegistryBuilder.new do
+    def set_nested_builder_as_default
+      self.default = NestedRegistryBuilder.new do
         RecursiveRegistry.new("level_#{(level + 1)}", **options.merge(level: (level + 1)), &config)
       end
     end

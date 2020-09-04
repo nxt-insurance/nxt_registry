@@ -50,7 +50,7 @@ RSpec.describe NxtRegistry do
     end
   end
 
-  context 'registering layered registries' do
+  context 'registering nested registries' do
     subject do
       extend NxtRegistry
 
@@ -77,14 +77,14 @@ RSpec.describe NxtRegistry do
     end
   end
 
-  context 'layered registry' do
+  context 'nested registry' do
     context 'when called by its name' do
       subject do
         extend NxtRegistry
 
         registry :from do
-          layered :to do
-            layered :kind, default: -> { [] }
+          nested :to do
+            nested :kind, default: -> { [] }
           end
         end
       end
@@ -94,14 +94,14 @@ RSpec.describe NxtRegistry do
       end
     end
 
-    context 'when registering layered values' do
+    context 'when registering nested values' do
       subject do
         extend NxtRegistry
 
         registry :from do
-          layered :to do
+          nested :to do
             register(:injected, 'ha ha ha')
-            layered :kind, default: -> { [] }
+            nested :kind, default: -> { [] }
           end
         end
       end
@@ -115,14 +115,14 @@ RSpec.describe NxtRegistry do
       end
     end
 
-    context 'when layered multiple times' do
+    context 'when nested multiple times' do
       subject do
         Class.new do
           extend NxtRegistry
 
           registry :from do
-            layered :to
-            layered :other
+            nested :to
+            nested :other
           end
         end
       end
@@ -137,8 +137,8 @@ RSpec.describe NxtRegistry do
         extend NxtRegistry
 
         registry :from do
-          layered :to do
-            layered :via, attrs: %i[c d]
+          nested :to do
+            nested :via, attrs: %i[c d]
           end
         end
       end
@@ -171,7 +171,7 @@ RSpec.describe NxtRegistry do
         extend NxtRegistry
 
         registry :from do
-          layered :to do
+          nested :to do
             attr :b
             attr :b
           end
@@ -204,8 +204,8 @@ RSpec.describe NxtRegistry do
         extend NxtRegistry::Singleton
 
         registry :from do
-          layered :to do
-            layered :via do
+          nested :to do
+            nested :via do
               attrs :train, :car, :plane, :horse
               self.default = -> { [] }
               self.memoize = true
@@ -241,8 +241,8 @@ RSpec.describe NxtRegistry do
         def passengers
           @passengers ||= begin
             registry :from do
-              layered :to do
-                layered :via do
+              nested :to do
+                nested :via do
                   attrs :train, :car, :plane, :horse
                   self.default = -> { [] }
                   self.memoize = true
@@ -283,8 +283,8 @@ RSpec.describe NxtRegistry do
         def passengers
           @passengers ||= begin
             registry :from do
-              layered :to do
-                layered :via do
+              nested :to do
+                nested :via do
                   resolver ->(value) { "The passenger travels via: #{value}" }
                 end
               end
@@ -309,8 +309,8 @@ RSpec.describe NxtRegistry do
 
     it do
       subject.configure do
-        layered :to do
-          layered :via do
+        nested :to do
+          nested :via do
             resolver ->(value) { "The passenger travels via: #{value}" }
           end
         end
