@@ -16,7 +16,7 @@ module NxtRegistry
 
     attr_reader :name
 
-    def nested(name, **options, &config)
+    def layer(name, **options, &config)
       options = options.merge(parent: self)
 
       if default.is_a?(Blank)

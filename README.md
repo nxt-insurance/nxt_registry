@@ -132,7 +132,26 @@ Nested.registry.resolve(:frontend, :igor)
 ```
 
 
-### Nested registries 
+### Defining namespaces for a registry
+
+Another feature of `NxtRegistry` is that you can define layers for a registry. Layers allow you to dynamically register 
+values within the defined layered structure.
+
+```ruby
+class Layer
+  extend NxtRegistry
+  
+  CALLBACKS = registry :from do
+    layer :to do
+      layer :via
+    end  
+  end
+end
+
+Layer::CALLBACKS.resolve(:munich, :amsterdam).register(:train, -> { 'train' })
+Layer::CALLBACKS.resolve(:munich, :amsterdam, :train)
+#  => 'train'
+``` 
 
 ### Restrict attributes to a certain set
 

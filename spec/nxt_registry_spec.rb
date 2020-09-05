@@ -83,8 +83,8 @@ RSpec.describe NxtRegistry do
         extend NxtRegistry
 
         registry :from do
-          nested :to do
-            nested :kind, default: -> { [] }
+          layer :to do
+            layer :kind, default: -> { [] }
           end
         end
       end
@@ -99,9 +99,9 @@ RSpec.describe NxtRegistry do
         extend NxtRegistry
 
         registry :from do
-          nested :to do
+          layer :to do
             register(:injected, 'ha ha ha')
-            nested :kind, default: -> { [] }
+            layer :kind, default: -> { [] }
           end
         end
       end
@@ -121,8 +121,8 @@ RSpec.describe NxtRegistry do
           extend NxtRegistry
 
           registry :from do
-            nested :to
-            nested :other
+            layer :to
+            layer :other
           end
         end
       end
@@ -137,8 +137,8 @@ RSpec.describe NxtRegistry do
         extend NxtRegistry
 
         registry :from do
-          nested :to do
-            nested :via, attrs: %i[c d]
+          layer :to do
+            layer :via, attrs: %i[c d]
           end
         end
       end
@@ -171,7 +171,7 @@ RSpec.describe NxtRegistry do
         extend NxtRegistry
 
         registry :from do
-          nested :to do
+          layer :to do
             attr :b
             attr :b
           end
@@ -204,8 +204,8 @@ RSpec.describe NxtRegistry do
         extend NxtRegistry::Singleton
 
         registry :from do
-          nested :to do
-            nested :via do
+          layer :to do
+            layer :via do
               attrs :train, :car, :plane, :horse
               self.default = -> { [] }
               self.memoize = true
@@ -241,8 +241,8 @@ RSpec.describe NxtRegistry do
         def passengers
           @passengers ||= begin
             registry :from do
-              nested :to do
-                nested :via do
+              layer :to do
+                layer :via do
                   attrs :train, :car, :plane, :horse
                   self.default = -> { [] }
                   self.memoize = true
@@ -283,8 +283,8 @@ RSpec.describe NxtRegistry do
         def passengers
           @passengers ||= begin
             registry :from do
-              nested :to do
-                nested :via do
+              layer :to do
+                layer :via do
                   resolver ->(value) { "The passenger travels via: #{value}" }
                 end
               end
@@ -309,8 +309,8 @@ RSpec.describe NxtRegistry do
 
     it do
       subject.configure do
-        nested :to do
-          nested :via do
+        layer :to do
+          layer :via do
             resolver ->(value) { "The passenger travels via: #{value}" }
           end
         end
