@@ -2,8 +2,8 @@
 
 # NxtRegistry
 
-NxtRegistry is a simple implementation of the container pattern. It allows you to register and resolve values in nested 
-structures by allowing nesting registries into each other. In theory this can be indefinitely deep.
+`NxtRegistry` is a simple implementation of the container pattern. It allows you to register and resolve values in nested 
+structures.
 
 ## Installation
 
@@ -23,7 +23,7 @@ Or install it yourself as:
 
 ## Usage
 
-### Instance Level
+### Simple use case on instance level 
 
 ```ruby
 class Example
@@ -44,7 +44,7 @@ example = Example.new
 example.languages.resolve(:ruby) # => 'Stone'
 ```
 
-Alternatively you can create an instance of NxtRegistry::Registry.new('name', **options, &config)
+Alternatively you can also create an instance of `NxtRegistry::Registry`
 
 ```ruby
 registry = NxtRegistry::Registry.new do
@@ -59,7 +59,7 @@ registry.resolve(:aki) # => 'Aki'
 
 ### Class Level
 
-By extending NxtRegistry::Singleton you get a super simple class level interface to an underlying instance of a :registry.
+By extending `NxtRegistry::Singleton` you get a simple class level interface to an instance of `NxtRegistry::Registry`.
 
 ```ruby
 class SimpleExample
@@ -75,54 +75,64 @@ class SimpleExample
 end
   
 SimpleExample.resolve(KeyError)
-# Alternatively: SimpleExample.registry.resolve(KeyError) 
-# Or: SimpleExample.instance.resolve(KeyError) 
+# Alternatively: SimpleExample.registry.resolve(KeyError)  
 # KeyError handler
 # => nil
-
 ```
+
+If you want to register multiple registries on the class level simply `extend NxtRegistry`
 
 ```ruby
 class OtherExample
   extend NxtRegistry
  
-  REGISTRY = registry(:errors) do
+  ERROR_REGISTRY = registry(:errors) do
     register(KeyError, ->(error) { puts 'KeyError handler' } )
     register(ArgumentError, ->(error) { puts 'ArgumentError handler' } )
   end
+
+  COUNTRY_CODES = registry(:country_codes) do
+    register(:germany, :de)
+    register(:england, :uk)
+    register(:france, :fr)
+  end 
+
 end
 
-# Instead of using the name of the registry, you can also always call register and resolve on the 
-# level where you want to register or resolve values. Equivalently to the named interface you can 
-# use register! and resolve! to softly resolve or forcfully register values.  
 OtherExample::REGISTRY.resolve(KeyError)
 # KeyError handler
 # => nil
-
+OtherExample::COUNTRY_CODES.resolve(:germany)
+# => :de
 ```
-### Nested registries
 
-You can also simply nest registries into each other
+### Nesting values
+
+You can also simply nest values:
 
 ```ruby
 class Nested
   extend NxtRegistry::Singleton
 
   registry :developers do
-    registry(:frontend) do
+    register(:frontend) do
       register(:igor, 'Igor')
       register(:ben, 'Ben')
     end
     
-    registry(:backend) do
+    register(:backend) do
       register(:rapha, 'Rapha')
       register(:aki, 'Aki')
     end
   end
 end
+
+Nested.registry.resolve(:frontend, :igor)
+# => 'Igor'
 ```
 
-Nested.registry.resolve(:frontend).resolve(:igor)
+
+### Nested registries 
 
 ### Restrict attributes to a certain set
 
