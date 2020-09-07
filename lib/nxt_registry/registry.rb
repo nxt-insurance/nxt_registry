@@ -26,6 +26,7 @@ module NxtRegistry
           Registry.new(name, **options, &config)
         end
 
+        # Call the builder once to guarantee we do not create a registry with a broken setup
         default.call
       elsif default.is_a?(NestedRegistryBuilder)
         raise ArgumentError, 'Multiple nestings on the same level'
