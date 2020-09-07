@@ -90,7 +90,7 @@ module NxtRegistry
 
     def resolve!(*keys)
       keys.inject(self) do |current_registry, key|
-          current_registry.send(:__resolve, key, raise: false) || break
+        current_registry.send(:__resolve, key, raise: false) || break
       end
     end
 
@@ -99,11 +99,11 @@ module NxtRegistry
     end
 
     def [](key)
-      store[transformed_key(key)]
+      resolve(key)
     end
 
     def []=(key, value)
-      store[transformed_key(key)] = value
+      register(key, value)
     end
 
     def keys
