@@ -23,7 +23,11 @@ Or install it yourself as:
 
 ## Usage
 
-### Simple use case on instance level 
+### Simple use case
+
+## Instance Level
+
+To use `NxtRegistry` on an instance level simply include it and build registries like so: 
 
 ```ruby
 class Example
@@ -44,7 +48,7 @@ example = Example.new
 example.languages.resolve(:ruby) # => 'Stone'
 ```
 
-Alternatively you can also create an instance of `NxtRegistry::Registry`
+Alternatively you can also create instances of `NxtRegistry::Registry`
 
 ```ruby
 registry = NxtRegistry::Registry.new do
@@ -57,9 +61,9 @@ registry.resolve(:aki) # => 'Aki'
 
 ```
 
-### Class Level
+## Class Level
 
-By extending `NxtRegistry::Singleton` you get a simple class level interface to an instance of `NxtRegistry::Registry`.
+By extending `NxtRegistry::Singleton` you get a minimal class level interface to an instance of `NxtRegistry::Registry`.
 
 ```ruby
 class SimpleExample
@@ -80,7 +84,7 @@ SimpleExample.resolve(KeyError)
 # => nil
 ```
 
-If you want to register multiple registries on the class level simply `extend NxtRegistry`
+If you want to register multiple registries on the class level simply extend your class with `NxtRegistry` instead of `NxtRegistry::Singleton`
 
 ```ruby
 class OtherExample
@@ -96,7 +100,6 @@ class OtherExample
     register(:england, :uk)
     register(:france, :fr)
   end 
-
 end
 
 OtherExample::REGISTRY.resolve(KeyError)
@@ -108,7 +111,7 @@ OtherExample::COUNTRY_CODES.resolve(:germany)
 
 ### Nesting registries
 
-You can also simply nest values:
+You can also simply nest registries like so:
 
 ```ruby
 class Nested
@@ -132,11 +135,11 @@ Nested.registry.resolve(:frontend, :igor)
 ```
 
 
-### Defining nesting levels of a registry
+### Defining specific nesting levels of a registry
 
-Another feature of `NxtRegistry` is that you can define levels for a registry. Levels allow you to dynamically register 
-values within the defined levels. This means that on any level the registry will resolve to another registry and you 
-can register values into a deeply nested structure.  
+Another feature of `NxtRegistry` is that you can define the nesting levels for a registry. Levels allow you to dynamically 
+register values within the defined levels. This means that on any level the registry will resolve to another registry and 
+you can register values into a deeply nested structure.  
 
 ```ruby
 class Layer
@@ -221,9 +224,10 @@ registry.resolve(:one)
 
 ### Transform keys
 
-NxtRegistry uses a plain ruby hash to store values internally. Per default all keys used are transformed with `&:to_s`.
-Thus you can use symbols or strings to register and resolve values. If it's not what you want, switch it off with `transform_keys false`
-or define your own key transformer by assigning a block to transform_keys: `transform_keys ->(key) { key.upcase }`
+`NxtRegistry` uses a plain ruby hash to store values internally. Per default all keys used are transformed with `&:to_s`.
+Thus you can use symbols or strings to register and resolve values. If it's not what you want, switch it off with 
+`transform_keys false` or define your own key transformer by assigning a block to transform_keys: 
+`transform_keys ->(key) { key.upcase }`
 
 ```ruby
 registry :example do
