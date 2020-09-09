@@ -16,19 +16,19 @@ module NxtRegistry
 
     attr_reader :name
 
-    def layer(name, **options, &config)
+    def level(name, **options, &config)
       options = options.merge(parent: self)
 
       if default.is_a?(Blank)
         self.is_leaf = false
 
-        self.default = NestedRegistryBuilder.new do
+        self.default = RegistryBuilder.new do
           Registry.new(name, **options, &config)
         end
 
         # Call the builder once to guarantee we do not create a registry with a broken setup
         default.call
-      elsif default.is_a?(NestedRegistryBuilder)
+      elsif default.is_a?(RegistryBuilder)
         raise ArgumentError, 'Multiple nestings on the same level'
       else
         raise ArgumentError, 'Default values cannot be defined on registries that nest others'
@@ -83,13 +83,13 @@ module NxtRegistry
       end
     end
 
-    def resolve(*keys)
+    def resolve!(*keys)
       keys.inject(self) do |current_registry, key|
         current_registry.send(:__resolve, key, raise: true)
       end
     end
 
-    def resolve!(*keys)
+    def resolve(*keys)
       keys.inject(self) do |current_registry, key|
         current_registry.send(:__resolve, key, raise: false) || break
       end
@@ -100,7 +100,7 @@ module NxtRegistry
     end
 
     def [](key)
-      resolve(key)
+      resolve!(key)
     end
 
     def []=(key, value)

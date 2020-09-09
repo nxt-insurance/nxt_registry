@@ -142,8 +142,8 @@ class Layer
   extend NxtRegistry
   
   CALLBACKS = registry :from do
-    layer :to do
-      layer :via
+    level :to do
+      level :via
     end  
   end
 end

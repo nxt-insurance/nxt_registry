@@ -72,8 +72,8 @@ RSpec.describe NxtRegistry do
       expect(subject.resolve(:backend).resolve(:rapha)).to eq('Rapha')
       expect(subject.developers(:frontend).frontend(:igor)).to eq('Igor')
 
-      expect(subject.resolve(:backend, :other)).to eq('Rubyist')
-      expect { subject.resolve(:fronted, :other) }.to raise_error(KeyError)
+      expect(subject.resolve!(:backend, :other)).to eq('Rubyist')
+      expect { subject.resolve!(:fronted, :other) }.to raise_error(KeyError)
     end
   end
 
@@ -83,8 +83,8 @@ RSpec.describe NxtRegistry do
         extend NxtRegistry
 
         registry :from do
-          layer :to do
-            layer :kind, default: -> { [] }
+          level :to do
+            level :kind, default: -> { [] }
           end
         end
       end
@@ -99,9 +99,9 @@ RSpec.describe NxtRegistry do
         extend NxtRegistry
 
         registry :from do
-          layer :to do
+          level :to do
             register(:injected, 'ha ha ha')
-            layer :kind, default: -> { [] }
+            level :kind, default: -> { [] }
           end
         end
       end
@@ -121,8 +121,8 @@ RSpec.describe NxtRegistry do
           extend NxtRegistry
 
           registry :from do
-            layer :to
-            layer :other
+            level :to
+            level :other
           end
         end
       end
@@ -137,8 +137,8 @@ RSpec.describe NxtRegistry do
         extend NxtRegistry
 
         registry :from do
-          layer :to do
-            layer :via, attrs: %i[c d]
+          level :to do
+            level :via, attrs: %i[c d]
           end
         end
       end
@@ -155,7 +155,7 @@ RSpec.describe NxtRegistry do
 
       context 'when resolving a missing key' do
         it do
-          expect { subject.from(:a).to(:b).via(:c) }.to raise_error KeyError, "Key 'c' not registered in registry 'from.to.via'"
+          expect { subject.from(:a).to(:b).via!(:c) }.to raise_error KeyError, "Key 'c' not registered in registry 'from.to.via'"
         end
       end
 
@@ -171,7 +171,7 @@ RSpec.describe NxtRegistry do
         extend NxtRegistry
 
         registry :from do
-          layer :to do
+          level :to do
             attr :b
             attr :b
           end
@@ -204,8 +204,8 @@ RSpec.describe NxtRegistry do
         extend NxtRegistry::Singleton
 
         registry :from do
-          layer :to do
-            layer :via do
+          level :to do
+            level :via do
               attrs :train, :car, :plane, :horse
               self.default = -> { [] }
               self.memoize = true
@@ -241,8 +241,8 @@ RSpec.describe NxtRegistry do
         def passengers
           @passengers ||= begin
             registry :from do
-              layer :to do
-                layer :via do
+              level :to do
+                level :via do
                   attrs :train, :car, :plane, :horse
                   self.default = -> { [] }
                   self.memoize = true
@@ -283,8 +283,8 @@ RSpec.describe NxtRegistry do
         def passengers
           @passengers ||= begin
             registry :from do
-              layer :to do
-                layer :via do
+              level :to do
+                level :via do
                   resolver ->(value) { "The passenger travels via: #{value}" }
                 end
               end
@@ -309,8 +309,8 @@ RSpec.describe NxtRegistry do
 
     it do
       subject.configure do
-        layer :to do
-          layer :via do
+        level :to do
+          level :via do
             resolver ->(value) { "The passenger travels via: #{value}" }
           end
         end
@@ -342,7 +342,7 @@ RSpec.describe NxtRegistry do
     end
 
     it do
-      expect { subject.resolve(:andy) }.to raise_error KeyError, "Key andy was never registered"
+      expect { subject.resolve!(:andy) }.to raise_error KeyError, "Key andy was never registered"
     end
   end
 
