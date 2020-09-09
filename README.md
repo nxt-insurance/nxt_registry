@@ -106,7 +106,7 @@ OtherExample::COUNTRY_CODES.resolve(:germany)
 # => :de
 ```
 
-### Nesting values
+### Nesting registries
 
 You can also simply nest values:
 
@@ -132,10 +132,11 @@ Nested.registry.resolve(:frontend, :igor)
 ```
 
 
-### Defining namespaces for a registry
+### Defining nesting levels of a registry
 
-Another feature of `NxtRegistry` is that you can define layers for a registry. Layers allow you to dynamically register 
-values within the defined layered structure.
+Another feature of `NxtRegistry` is that you can define levels for a registry. Levels allow you to dynamically register 
+values within the defined levels. This means that on any level the registry will resolve to another registry and you 
+can register values into a deeply nested structure.  
 
 ```ruby
 class Layer
@@ -148,9 +149,15 @@ class Layer
   end
 end
 
+Layer::CALLBACKS # => Registry[from]
+
+Layer::CALLBACKS.resolve(:munich) # => Registry[to] -> {}
+Layer::CALLBACKS.resolve(:amsterdam) # => Registry[to] -> {}
+Layer::CALLBACKS.resolve(:any_key) # => Registry[to] -> {}
+
+Layer::CALLBACKS.resolve(:munich, :amsterdam) # => Registry[via] -> {}
 Layer::CALLBACKS.resolve(:munich, :amsterdam).register(:train, -> { 'train' })
-Layer::CALLBACKS.resolve(:munich, :amsterdam, :train)
-#  => 'train'
+Layer::CALLBACKS.resolve(:munich, :amsterdam, :train) #  => 'train'
 ``` 
 
 ### Restrict attributes to a certain set
