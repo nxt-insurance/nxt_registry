@@ -188,7 +188,6 @@ module NxtRegistry
           end
         end
       else
-        # Call nested registry builder when we are not a leaf
         store[key] ||= default.call
       end
 
