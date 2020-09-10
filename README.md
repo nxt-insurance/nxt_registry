@@ -33,19 +33,15 @@ To use `NxtRegistry` on an instance level simply include it and build registries
 class Example
   include NxtRegistry
   
-  def languages
-    @languages ||= begin
-      registry :languages do
-        register(:ruby, 'Stone')
-        register(:python, 'Snake')
-        register(:javascript, 'undefined')
-      end
-    end
+  registry :languages do
+    register(:ruby, 'Stone')
+    register(:python, 'Snake')
+    register(:javascript, 'undefined')
   end
 end
 
 example = Example.new
-example.languages.resolve(:ruby) # => 'Stone'
+example.registry(:languages).resolve(:ruby) # => 'Stone'
 ```
 
 Alternatively you can also create instances of `NxtRegistry::Registry`
@@ -63,49 +59,28 @@ registry.resolve(:aki) # => 'Aki'
 
 ## Class Level
 
-By extending `NxtRegistry::Singleton` you get a minimal class level interface to an instance of `NxtRegistry::Registry`.
-
-```ruby
-class SimpleExample
-  extend NxtRegistry::Singleton
-  
-  registry do
-    register(KeyError, ->(error) { puts 'KeyError handler' } )
-    register(ArgumentError, ->(error) { puts 'ArgumentError handler' } )
-    
-    on_key_already_registered ->(key) { raise "Key was already registered dude: #{key}" }
-    on_key_not_registered ->(key) { raise "Key was never registered dude: #{key}" }
-  end
-end
-  
-SimpleExample.resolve(KeyError)
-# Alternatively: SimpleExample.registry.resolve(KeyError)  
-# KeyError handler
-# => nil
-```
-
-If you want to register multiple registries on the class level simply extend your class with `NxtRegistry` instead of `NxtRegistry::Singleton`
+You can register registries on the class level simply by extending your class with `NxtRegistry`
 
 ```ruby
 class OtherExample
   extend NxtRegistry
  
-  ERROR_REGISTRY = registry(:errors) do
+  registry(:errors) do
     register(KeyError, ->(error) { puts 'KeyError handler' } )
     register(ArgumentError, ->(error) { puts 'ArgumentError handler' } )
   end
 
-  COUNTRY_CODES = registry(:country_codes) do
+  registry(:country_codes) do
     register(:germany, :de)
     register(:england, :uk)
     register(:france, :fr)
   end 
 end
 
-OtherExample::REGISTRY.resolve(KeyError)
+OtherExample.registry(:errors).resolve(KeyError)
 # KeyError handler
 # => nil
-OtherExample::COUNTRY_CODES.resolve(:germany)
+OtherExample.registry(:country_codes).resolve(:germany)
 # => :de
 ```
 
@@ -115,7 +90,7 @@ You can also simply nest registries like so:
 
 ```ruby
 class Nested
-  extend NxtRegistry::Singleton
+  extend NxtRegistry
 
   registry :developers do
     register(:frontend) do
@@ -130,7 +105,7 @@ class Nested
   end
 end
 
-Nested.registry.resolve(:frontend, :igor)
+Nested.registry(:developers).resolve(:frontend, :igor)
 # => 'Igor'
 ```
 
