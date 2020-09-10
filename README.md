@@ -83,6 +83,9 @@ OtherExample.registry(:errors).resolve(KeyError)
 OtherExample.registry(:country_codes).resolve(:germany)
 # => :de
 ```
+### Readers
+
+Access your defined registries with the `registry(:country_code)` method.
 
 ### Nesting registries
 
@@ -120,22 +123,22 @@ you can register values into a deeply nested structure.
 class Layer
   extend NxtRegistry
   
-  CALLBACKS = registry :from do
+  registry :from do
     level :to do
       level :via
     end  
   end
 end
 
-Layer::CALLBACKS # => Registry[from]
+Layer.registry(:from) # => Registry[from]
 
-Layer::CALLBACKS.resolve(:munich) # => Registry[to] -> {}
-Layer::CALLBACKS.resolve(:amsterdam) # => Registry[to] -> {}
-Layer::CALLBACKS.resolve(:any_key) # => Registry[to] -> {}
+Layer.registry(:from).resolve(:munich) # => Registry[to] -> {}
+Layer.registry(:from).resolve(:amsterdam) # => Registry[to] -> {}
+Layer.registry(:from).resolve(:any_key) # => Registry[to] -> {}
 
-Layer::CALLBACKS.resolve(:munich, :amsterdam) # => Registry[via] -> {}
-Layer::CALLBACKS.resolve(:munich, :amsterdam).register(:train, -> { 'train' })
-Layer::CALLBACKS.resolve(:munich, :amsterdam, :train) #  => 'train'
+Layer.registry(:from).resolve(:munich, :amsterdam) # => Registry[via] -> {}
+Layer.registry(:from).resolve(:munich, :amsterdam).register(:train, -> { 'train' })
+Layer.registry(:from).resolve(:munich, :amsterdam, :train) #  => 'train'
 ``` 
 
 ### Restrict attributes to a certain set

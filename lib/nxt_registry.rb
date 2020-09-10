@@ -12,9 +12,7 @@ module NxtRegistry
     return registries.fetch(name) if registries.key?(name)
 
     registry = Registry.new(name, **options, &config)
-    reader = options.fetch(:reader) { true }
-    options.delete(:reader)
-    registries[name] ||= registry if reader
+    registries[name] ||= registry
     registry
   end
 
@@ -22,9 +20,7 @@ module NxtRegistry
     return registries.fetch(name) if registries.key?(name)
 
     registry = RecursiveRegistry.new(name, **options, &config)
-    reader = options.fetch(:reader) { true }
-    options.delete(:reader)
-    registries[name] ||= registry if reader
+    registries[name] ||= registry
     registry
   end
 
