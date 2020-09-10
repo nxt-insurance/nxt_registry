@@ -362,4 +362,42 @@ RSpec.describe NxtRegistry do
       expect { subject.register(:rapha, 'dog') }.to_not change { clone.developers.to_h }
     end
   end
+
+  context 'readers' do
+    context 'class level' do
+      subject do
+        Class.new do
+          extend NxtRegistry
+
+          REGISTRY = registry :developers do
+            call(false)
+          end
+        end
+      end
+
+      it do
+        expect(subject.registry(:developers)).to eq(subject.const_get('REGISTRY'))
+      end
+    end
+
+    context 'instance level' do
+      let(:test_class) do
+        Class.new do
+          include NxtRegistry
+
+          def devs
+            registry :developers do
+              call(false)
+            end
+          end
+        end
+      end
+
+      subject { test_class.new }
+
+      it do
+        expect(subject.registry(:developers)).to eq(subject.devs)
+      end
+    end
+  end
 end
