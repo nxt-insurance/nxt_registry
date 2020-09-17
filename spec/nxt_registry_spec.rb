@@ -50,14 +50,41 @@ RSpec.describe NxtRegistry do
     end
   end
 
+  context 'registering nested registries' do
+    subject do
+      extend NxtRegistry
+
+      registry :developers do
+        register(:frontend) do
+          register(:igor, 'Igor')
+          register(:ben, 'Ben')
+        end
+
+        register(:backend, default: -> { 'Rubyist' }) do
+          register(:rapha, 'Rapha')
+          register(:aki, 'Aki')
+        end
+      end
+    end
+
+    it do
+      expect(subject.resolve(:frontend).resolve(:igor)).to eq('Igor')
+      expect(subject.resolve(:backend).resolve(:rapha)).to eq('Rapha')
+      expect(subject.developers(:frontend).frontend(:igor)).to eq('Igor')
+
+      expect(subject.resolve!(:backend, :other)).to eq('Rubyist')
+      expect { subject.resolve!(:fronted, :other) }.to raise_error(KeyError)
+    end
+  end
+
   context 'nested registry' do
     context 'when called by its name' do
       subject do
         extend NxtRegistry
 
         registry :from do
-          nested :to do
-            nested :kind, default: -> { [] }
+          level :to do
+            level :kind, default: -> { [] }
           end
         end
       end
@@ -72,8 +99,9 @@ RSpec.describe NxtRegistry do
         extend NxtRegistry
 
         registry :from do
-          nested :to do
-            nested :kind, default: -> { [] }
+          level :to do
+            register(:injected, 'ha ha ha')
+            level :kind, default: -> { [] }
           end
         end
       end
@@ -81,6 +109,9 @@ RSpec.describe NxtRegistry do
       it do
         subject.from(:pending).to(:processing).kind(:after, -> { 'after transition callback' })
         expect(subject.from(:pending).to(:processing).kind(:after)).to eq('after transition callback')
+        expect(subject.resolve(:pending, :processing, :after)).to eq('after transition callback')
+
+        expect(subject.from(:pending).to(:injected)).to eq('ha ha ha')
       end
     end
 
@@ -90,8 +121,8 @@ RSpec.describe NxtRegistry do
           extend NxtRegistry
 
           registry :from do
-            nested :to
-            nested :other
+            level :to
+            level :other
           end
         end
       end
@@ -106,8 +137,8 @@ RSpec.describe NxtRegistry do
         extend NxtRegistry
 
         registry :from do
-          nested :to do
-            nested :via, attrs: %i[c d]
+          level :to do
+            level :via, attrs: %i[c d]
           end
         end
       end
@@ -116,6 +147,7 @@ RSpec.describe NxtRegistry do
         it do
           expect(subject.from(:a).to(:b).via(:c, 'c')).to eq('c')
           expect(subject.from(:a).to(:b).via(:c)).to eq('c')
+          expect(subject.resolve(:a, :b, :c)).to eq('c')
 
           expect { subject.from(:a).to(:b).via(:c, 'c') }.to raise_error KeyError,  "Key 'c' already registered in registry 'from.to.via'"
         end
@@ -123,7 +155,7 @@ RSpec.describe NxtRegistry do
 
       context 'when resolving a missing key' do
         it do
-          expect { subject.from(:a).to(:b).via(:c) }.to raise_error KeyError, "Key 'c' not registered in registry 'from.to.via'"
+          expect { subject.from(:a).to(:b).via!(:c) }.to raise_error KeyError, "Key 'c' not registered in registry 'from.to.via'"
         end
       end
 
@@ -139,7 +171,7 @@ RSpec.describe NxtRegistry do
         extend NxtRegistry
 
         registry :from do
-          nested :to do
+          level :to do
             attr :b
             attr :b
           end
@@ -166,41 +198,6 @@ RSpec.describe NxtRegistry do
     end
   end
 
-  context 'singleton registry' do
-    subject do
-      Class.new do
-        extend NxtRegistry::Singleton
-
-        registry :from do
-          nested :to do
-            nested :via do
-              attrs :train, :car, :plane, :horse
-              self.default = -> { [] }
-              self.memoize = true
-              call true
-              resolver ->(value) { value }
-            end
-          end
-        end
-      end
-    end
-
-    before do
-      subject.from(:a).to(:b).via(:train, ['Andy']) << 'Andy'
-      subject.from(:a).to(:b).via(:car) << 'Lütfi'
-      subject.from(:a).to(:b).via(:plane) << 'Nils'
-      subject.instance.from(:a).to(:b).via(:plane) << 'Rapha'
-    end
-
-    it do
-      expect(subject.from(:a).to(:b).via(:train)).to eq(%w[Andy Andy])
-      expect(subject['a']['b']['train']).to eq(%w[Andy Andy])
-
-      expect(subject.from(:a).to(:b).via(:car)).to eq(%w[Lütfi])
-      expect(subject.instance.from(:a).to(:b).via(:plane)).to eq(%w[Nils Rapha])
-    end
-  end
-
   context 'example from README' do
     subject do
       klass = Class.new do
@@ -209,8 +206,8 @@ RSpec.describe NxtRegistry do
         def passengers
           @passengers ||= begin
             registry :from do
-              nested :to do
-                nested :via do
+              level :to do
+                level :via do
                   attrs :train, :car, :plane, :horse
                   self.default = -> { [] }
                   self.memoize = true
@@ -251,8 +248,8 @@ RSpec.describe NxtRegistry do
         def passengers
           @passengers ||= begin
             registry :from do
-              nested :to do
-                nested :via do
+              level :to do
+                level :via do
                   resolver ->(value) { "The passenger travels via: #{value}" }
                 end
               end
@@ -277,8 +274,8 @@ RSpec.describe NxtRegistry do
 
     it do
       subject.configure do
-        nested :to do
-          nested :via do
+        level :to do
+          level :via do
             resolver ->(value) { "The passenger travels via: #{value}" }
           end
         end
@@ -310,7 +307,7 @@ RSpec.describe NxtRegistry do
     end
 
     it do
-      expect { subject.resolve(:andy) }.to raise_error KeyError, "Key andy was never registered"
+      expect { subject.resolve!(:andy) }.to raise_error KeyError, "Key andy was never registered"
     end
   end
 
@@ -328,6 +325,76 @@ RSpec.describe NxtRegistry do
     it 'clones the store' do
       expect { clone.register(:luetfi, 'legend') }.to_not change { subject.developers.to_h }
       expect { subject.register(:rapha, 'dog') }.to_not change { clone.developers.to_h }
+    end
+  end
+
+  context 'defaults' do
+    context 'when the default value is a block' do
+      context 'that takes an argument' do
+        subject do
+          extend NxtRegistry
+
+          registry :developers, default: ->(original) { original } do
+            register(:ruby, 'Gem')
+          end
+        end
+
+        it 'calls the block with the key as argument' do
+          expect(subject.resolve(:javascript)).to eq('javascript')
+        end
+      end
+
+      context 'that takes no arguments' do
+        subject do
+          extend NxtRegistry
+
+          registry :developers, default: -> { 'undefined' } do
+            register(:ruby, 'Gem')
+          end
+        end
+
+        it 'calls the block' do
+          expect(subject.resolve(:javascript)).to eq('undefined')
+        end
+      end
+    end
+  end
+
+  context 'readers' do
+    context 'class level' do
+      subject do
+        Class.new do
+          extend NxtRegistry
+
+          REGISTRY = registry :developers do
+            call(false)
+          end
+        end
+      end
+
+      it do
+        expect(subject.registry(:developers)).to eq(subject.const_get('REGISTRY'))
+      end
+    end
+
+    context 'instance level' do
+      let(:test_class) do
+        Class.new do
+          include NxtRegistry
+
+          def devs
+            registry :developers do
+              call(false)
+            end
+          end
+        end
+      end
+
+      subject { test_class.new }
+
+      it do
+        expect(subject.registry(:developers)).to eq(subject.devs)
+      end
     end
   end
 end

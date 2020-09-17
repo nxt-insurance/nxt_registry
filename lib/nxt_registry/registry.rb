@@ -16,23 +16,33 @@ module NxtRegistry
 
     attr_reader :name
 
-    def nested(name, **options, &config)
-      # TODO: Ensure that nesting is included in defined attrs
+    def level(name, **options, &config)
       options = options.merge(parent: self)
 
       if default.is_a?(Blank)
         self.is_leaf = false
 
-        self.default = NestedRegistryBuilder.new do
+        self.default = RegistryBuilder.new do
           Registry.new(name, **options, &config)
         end
 
+        # Call the builder once to guarantee we do not create a registry with a broken setup
         default.call
-      elsif default.is_a?(NestedRegistryBuilder)
+      elsif default.is_a?(RegistryBuilder)
         raise ArgumentError, 'Multiple nestings on the same level'
       else
         raise ArgumentError, 'Default values cannot be defined on registries that nest others'
       end
+    end
+
+    def registry(name, **options, &config)
+      options = options.merge(parent: self)
+      register(name, Registry.new(name, **options, &config))
+    end
+
+    def registry!(name, **options, &config)
+      options = options.merge(parent: self)
+      register!(name, Registry.new(name, **options, &config))
     end
 
     def attr(name)
@@ -49,20 +59,40 @@ module NxtRegistry
       args.each { |name| attr(name) }
     end
 
-    def register(key, value)
-      __register(key, value, raise: true)
+    def register(key = Blank.new, value = Blank.new, **options, &block)
+      if block_given?
+        if value.is_a?(Blank)
+          registry(key, **options, &block)
+        else
+          raise_register_argument_error
+        end
+      else
+        __register(key, value, raise: true)
+      end
     end
 
-    def register!(key, value)
-      __register(key, value, raise: false)
+    def register!(key = Blank.new, value = Blank.new, **options, &block)
+      if block_given?
+        if value.is_a?(Blank)
+          registry!(key, **options, &block)
+        else
+          raise_register_argument_error
+        end
+      else
+        __register(key, value, raise: false)
+      end
     end
 
-    def resolve(key)
-      __resolve(key, raise: true)
+    def resolve!(*keys)
+      keys.inject(self) do |current_registry, key|
+        current_registry.send(:__resolve, key, raise: true)
+      end
     end
 
-    def resolve!(key)
-      __resolve(key, raise: false)
+    def resolve(*keys)
+      keys.inject(self) do |current_registry, key|
+        current_registry.send(:__resolve, key, raise: false) || break
+      end
     end
 
     def to_h
@@ -70,11 +100,11 @@ module NxtRegistry
     end
 
     def [](key)
-      store[transformed_key(key)]
+      resolve!(key)
     end
 
     def []=(key, value)
-      store[transformed_key(key)] = value
+      register(key, value)
     end
 
     def keys
@@ -97,7 +127,7 @@ module NxtRegistry
       store.fetch(transformed_key(key), *args, &block)
     end
 
-    delegate :size, :values, :each, to: :store
+    delegate :size, :values, :each, :freeze, to: :store
 
     def configure(&block)
       define_accessors
@@ -131,7 +161,7 @@ module NxtRegistry
     def __register(key, value, raise: true)
       key = transformed_key(key)
 
-      raise ArgumentError, 'Not allowed to register values in a registry that contains nested registries' unless is_leaf
+      raise ArgumentError, "Not allowed to register values in a registry that contains nested registries" unless is_leaf
       raise KeyError, "Keys are restricted to #{attrs.keys}" if attribute_not_allowed?(key)
 
       on_key_already_registered && on_key_already_registered.call(key) if store[key] && raise
@@ -143,7 +173,7 @@ module NxtRegistry
       key = transformed_key(key)
 
       value = if is_leaf?
-        if store[key]
+        if store.key?(key)
           store.fetch(key)
         else
           if default.is_a?(Blank)
@@ -151,14 +181,13 @@ module NxtRegistry
 
             on_key_not_registered && on_key_not_registered.call(key)
           else
-            value = resolve_default
+            value = resolve_default(key)
             return value unless memoize
 
             store[key] ||= value
           end
         end
       else
-        # Call nested registry builder when we are not a leaf
         store[key] ||= default.call
       end
 
@@ -236,9 +265,9 @@ module NxtRegistry
       attrs.keys.exclude?(transformed_key(key))
     end
 
-    def resolve_default
+    def resolve_default(key)
       if call && default.respond_to?(:call)
-        default.call
+        default.arity > 0 ? default.call(key) : default.call
       else
         default
       end
@@ -271,6 +300,10 @@ module NxtRegistry
 
     def build_namespace
       parent ? name.to_s.prepend("#{parent.send(:namespace)}.") : name.to_s
+    end
+
+    def raise_register_argument_error
+      raise ArgumentError, 'Either provide a key value pair or a block to register'
     end
   end
 end

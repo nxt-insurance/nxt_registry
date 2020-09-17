@@ -1,3 +1,17 @@
+# v0.3.0 2020-09-10
+
+### Breaking Changes
+ 
+- Toggled interface for resolve(!) and register(!)
+- Allow to register values in nested registries
+- Rename nested method into level
+- Provide registry readers
+- Remove Singleton extension
+- Allow to resolve paths
+- Pass key to default block when it takes an argument
+
+[Compare v0.2.1...v0.3.0](https://github.com/nxt-insurance/nxt_registry/compare/v0.2.1...v0.3.0)
+
 # v0.2.1 2020-08-14
 
 ### Fixed

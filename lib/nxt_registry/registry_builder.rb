@@ -1,5 +1,5 @@
 module NxtRegistry
-  class NestedRegistryBuilder < Proc
+  class RegistryBuilder < Proc
     def initialize(&block)
       super(&block)
     end
