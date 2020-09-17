@@ -8,6 +8,7 @@
 - Provide registry readers
 - Remove Singleton extension
 - Allow to resolve paths
+- Pass key to default block when it takes an argument
 
 [Compare v0.2.1...v0.3.0](https://github.com/nxt-insurance/nxt_registry/compare/v0.2.1...v0.3.0)
 
