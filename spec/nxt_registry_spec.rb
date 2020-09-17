@@ -328,6 +328,38 @@ RSpec.describe NxtRegistry do
     end
   end
 
+  context 'defaults' do
+    context 'when the default value is a block' do
+      context 'that takes an argument' do
+        subject do
+          extend NxtRegistry
+
+          registry :developers, default: ->(original) { original } do
+            register(:ruby, 'Gem')
+          end
+        end
+
+        it 'calls the block with the key as argument' do
+          expect(subject.resolve(:javascript)).to eq('javascript')
+        end
+      end
+
+      context 'that takes no arguments' do
+        subject do
+          extend NxtRegistry
+
+          registry :developers, default: -> { 'undefined' } do
+            register(:ruby, 'Gem')
+          end
+        end
+
+        it 'calls the block' do
+          expect(subject.resolve(:javascript)).to eq('undefined')
+        end
+      end
+    end
+  end
+
   context 'readers' do
     context 'class level' do
       subject do

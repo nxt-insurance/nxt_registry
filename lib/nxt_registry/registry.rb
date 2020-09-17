@@ -181,7 +181,7 @@ module NxtRegistry
 
             on_key_not_registered && on_key_not_registered.call(key)
           else
-            value = resolve_default
+            value = resolve_default(key)
             return value unless memoize
 
             store[key] ||= value
@@ -265,9 +265,9 @@ module NxtRegistry
       attrs.keys.exclude?(transformed_key(key))
     end
 
-    def resolve_default
+    def resolve_default(key)
       if call && default.respond_to?(:call)
-        default.call
+        default.arity > 0 ? default.call(key) : default.call
       else
         default
       end
