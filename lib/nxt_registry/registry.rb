@@ -1,13 +1,12 @@
 module NxtRegistry
   class Registry
     def initialize(name = object_id.to_s, **options, &config)
+      @options = options
       @name = name
       @parent = options[:parent]
-      @accessor = options.fetch(:accessor) { name }
       @is_leaf = true
       @namespace = build_namespace
       @config = config
-      @options = options
       @store = {}
       @attrs = nil
 
@@ -20,7 +19,7 @@ module NxtRegistry
     def level(name, **options, &config)
       options = options.merge(parent: self)
 
-      if default.is_a?(Blank)
+      if is_a_blank?(default)
         self.is_leaf = false
 
         self.default = RegistryBuilder.new do
@@ -37,13 +36,13 @@ module NxtRegistry
     end
 
     def registry(name, **options, &config)
-      options = options.merge(parent: self)
-      register(name, Registry.new(name, **options, &config))
+      opts = options.merge(parent: self)
+      register(name, Registry.new(name, **opts, &config))
     end
 
     def registry!(name, **options, &config)
-      options = options.merge(parent: self)
-      register!(name, Registry.new(name, **options, &config))
+      opts = options.merge(parent: self)
+      register!(name, Registry.new(name, **opts, &config))
     end
 
     def attr(name)
@@ -62,7 +61,7 @@ module NxtRegistry
 
     def register(key = Blank.new, value = Blank.new, **options, &block)
       if block_given?
-        if value.is_a?(Blank)
+        if is_a_blank?(value)
           registry(key, **options, &block)
         else
           raise_register_argument_error
@@ -74,7 +73,7 @@ module NxtRegistry
 
     def register!(key = Blank.new, value = Blank.new, **options, &block)
       if block_given?
-        if value.is_a?(Blank)
+        if is_a_blank?(value)
           registry!(key, **options, &block)
         else
           raise_register_argument_error
@@ -177,7 +176,7 @@ module NxtRegistry
         if store.key?(key)
           store.fetch(key)
         else
-          if default.is_a?(Blank)
+          if is_a_blank?(default)
             return unless raise
 
             on_key_not_registered && on_key_not_registered.call(key)
@@ -207,11 +206,11 @@ module NxtRegistry
 
     def define_interface
       define_singleton_method accessor do |key = Blank.new, value = Blank.new|
-        return self if key.is_a?(Blank)
+        return self if is_a_blank?(key)
 
         key = transformed_key(key)
 
-        if value.is_a?(Blank)
+        if is_a_blank?(value)
           resolve(key)
         else
           register(key, value)
@@ -219,11 +218,11 @@ module NxtRegistry
       end
 
       define_singleton_method "#{accessor}!" do |key = Blank.new, value = Blank.new|
-        return self if key.is_a?(Blank)
+        return self if is_a_blank?(key)
 
         key = transformed_key(key)
 
-        if value.is_a?(Blank)
+        if is_a_blank?(value)
           resolve!(key)
         else
           register!(key, value)
@@ -237,6 +236,7 @@ module NxtRegistry
       @call = options.fetch(:call) { true }
       @resolver = options.fetch(:resolver, false)
       @transform_keys = options.fetch(:transform_keys) { ->(key) { key.to_s } }
+      @accessor = options.fetch(:accessor) { name }
 
       @on_key_already_registered = options.fetch(:on_key_already_registered) { ->(key) { raise_key_already_registered_error(key) } }
       @on_key_not_registered = options.fetch(:on_key_not_registered) { ->(key) { raise_key_not_registered_error(key) } }
@@ -247,7 +247,7 @@ module NxtRegistry
         define_singleton_method attribute do |value = Blank.new, &block|
           value = block if block
 
-          if value.is_a?(Blank)
+          if is_a_blank?(value)
             instance_variable_get("@#{attribute}")
           else
             instance_variable_set("@#{attribute}", value)
@@ -285,7 +285,7 @@ module NxtRegistry
     def transformed_key(key)
       @transformed_key ||= {}
       @transformed_key[key] ||= begin
-        if transform_keys && !key.is_a?(Blank)
+        if transform_keys && !is_a_blank?(key)
           transform_keys.call(key)
         else
           key
@@ -305,6 +305,10 @@ module NxtRegistry
 
     def raise_register_argument_error
       raise ArgumentError, 'Either provide a key value pair or a block to register'
+    end
+
+    def is_a_blank?(value)
+      value.is_a?(Blank)
     end
   end
 end

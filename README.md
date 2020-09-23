@@ -59,7 +59,7 @@ registry.resolve(:aki) # => 'Aki'
 
 ## Class Level
 
-You can register registries on the class level simply by extending your class with `NxtRegistry`
+You can add registries on the class level simply by extending your class with `NxtRegistry`
 
 ```ruby
 class OtherExample
@@ -161,7 +161,6 @@ end
 Layer.registry(:path).from(:munich).to(:amsterdam).via(:train, -> { 'train' })
 # Resolve the complete path
 Layer.registry(:path).from(:munich).to(:amsterdam).via(:train) #  => 'train'
-
 ```
 
 *Note that this feature is also available for registries with a single level only.*

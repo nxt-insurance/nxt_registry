@@ -6,7 +6,7 @@ Gem::Specification.new do |spec|
   spec.name          = "nxt_registry"
   spec.version       = NxtRegistry::VERSION
   spec.authors       = ["Andreas Robecke", "Nils Sommer", "Raphael Kallensee", "Lütfi Demirci"]
-  spec.email         = ["a.robecke@getsafe.de"]
+  spec.email         = ['a.robecke@hellogetsafe.com', 'andreas@robecke.de']
 
   spec.summary       = %q{nxt_registry is a simple implementation of the container pattern}
   spec.homepage      = "https://github.com/nxt-insurance"
