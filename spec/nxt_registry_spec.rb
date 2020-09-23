@@ -286,6 +286,25 @@ RSpec.describe NxtRegistry do
     end
   end
 
+  describe 'accessor option' do
+    subject do
+      NxtRegistry::Registry.new(:path, accessor: :from)
+    end
+
+    it 'defines custom accessors' do
+      subject.configure do
+        level :to do
+          level :via do
+            resolver ->(value) { "The passenger travels via: #{value}" }
+          end
+        end
+      end
+
+      subject.from(:a).to(:b).via(:train, 'ICE')
+      expect(subject.from(:a).to(:b).via(:train)).to eq('The passenger travels via: ICE')
+    end
+  end
+
   describe '#on_key_already_registered' do
     subject do
       NxtRegistry::Registry.new(:test) do

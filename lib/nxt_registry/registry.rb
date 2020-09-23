@@ -3,6 +3,7 @@ module NxtRegistry
     def initialize(name = object_id.to_s, **options, &config)
       @name = name
       @parent = options[:parent]
+      @accessor = options.fetch(:accessor) { name }
       @is_leaf = true
       @namespace = build_namespace
       @config = config
@@ -151,7 +152,7 @@ module NxtRegistry
 
     private
 
-    attr_reader :namespace, :parent, :config, :store, :options
+    attr_reader :namespace, :parent, :config, :store, :options, :accessor
     attr_accessor :is_leaf
 
     def is_leaf?
@@ -205,7 +206,7 @@ module NxtRegistry
     end
 
     def define_interface
-      define_singleton_method name do |key = Blank.new, value = Blank.new|
+      define_singleton_method accessor do |key = Blank.new, value = Blank.new|
         return self if key.is_a?(Blank)
 
         key = transformed_key(key)
@@ -217,7 +218,7 @@ module NxtRegistry
         end
       end
 
-      define_singleton_method "#{name}!" do |key = Blank.new, value = Blank.new|
+      define_singleton_method "#{accessor}!" do |key = Blank.new, value = Blank.new|
         return self if key.is_a?(Blank)
 
         key = transformed_key(key)
