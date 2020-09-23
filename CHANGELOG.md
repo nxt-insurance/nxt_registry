@@ -1,3 +1,7 @@
+# v0.3.1 2020-09-23
+
+- Allow to define custom accessors for registries
+
 # v0.3.0 2020-09-10
 
 ### Breaking Changes
