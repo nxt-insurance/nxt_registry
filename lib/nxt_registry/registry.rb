@@ -67,7 +67,7 @@ module NxtRegistry
           raise_register_argument_error
         end
       else
-        __register(key, value, raise: true)
+        __register(key, value, raise_on_key_already_registered: true)
       end
     end
 
@@ -79,19 +79,19 @@ module NxtRegistry
           raise_register_argument_error
         end
       else
-        __register(key, value, raise: false)
+        __register(key, value, raise_on_key_already_registered: false)
       end
     end
 
     def resolve!(*keys)
       keys.inject(self) do |current_registry, key|
-        current_registry.send(:__resolve, key, raise: true)
+        current_registry.send(:__resolve, key, raise_on_key_not_registered: true)
       end
     end
 
     def resolve(*keys)
       keys.inject(self) do |current_registry, key|
-        current_registry.send(:__resolve, key, raise: false) || break
+        current_registry.send(:__resolve, key, raise_on_key_not_registered: false) || break
       end
     end
 
@@ -158,18 +158,18 @@ module NxtRegistry
       @is_leaf
     end
 
-    def __register(key, value, raise: true)
+    def __register(key, value, raise_on_key_already_registered: true)
       key = transformed_key(key)
 
       raise ArgumentError, "Not allowed to register values in a registry that contains nested registries" unless is_leaf
       raise KeyError, "Keys are restricted to #{attrs.keys}" if attribute_not_allowed?(key)
 
-      on_key_already_registered && on_key_already_registered.call(key) if store[key] && raise
+      on_key_already_registered && on_key_already_registered.call(key) if store[key] && raise_on_key_already_registered
 
       store[key] = value
     end
 
-    def __resolve(key, raise: true)
+    def __resolve(key, raise_on_key_not_registered: true)
       key = transformed_key(key)
 
       value = if is_leaf?
@@ -177,7 +177,7 @@ module NxtRegistry
           store.fetch(key)
         else
           if is_a_blank?(default)
-            return unless raise
+            return unless raise_on_key_not_registered
 
             on_key_not_registered && on_key_not_registered.call(key)
           else
