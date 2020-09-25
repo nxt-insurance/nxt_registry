@@ -11,7 +11,7 @@ module NxtRegistry
       @attrs = nil
 
       setup_defaults(options)
-      configure(&config)
+      configure(&config) if block_given? || parent
     end
 
     attr_reader :name
@@ -205,6 +205,10 @@ module NxtRegistry
     end
 
     def define_interface
+      raise_invalid_accessor_name(accessor) if respond_to?(accessor)
+      accessor_with_bang = "#{accessor}!"
+      raise_invalid_accessor_name(accessor_with_bang) if respond_to?(accessor_with_bang)
+
       define_singleton_method accessor do |key = Blank.new, value = Blank.new|
         return self if is_a_blank?(key)
 
@@ -217,7 +221,7 @@ module NxtRegistry
         end
       end
 
-      define_singleton_method "#{accessor}!" do |key = Blank.new, value = Blank.new|
+      define_singleton_method accessor_with_bang do |key = Blank.new, value = Blank.new|
         return self if is_a_blank?(key)
 
         key = transformed_key(key)
@@ -309,6 +313,10 @@ module NxtRegistry
 
     def is_a_blank?(value)
       value.is_a?(Blank)
+    end
+
+    def raise_invalid_accessor_name(name)
+      raise ArgumentError, "#{self} already implements a method named: #{name}. Please choose a different accessor name"
     end
   end
 end
