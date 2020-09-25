@@ -59,7 +59,7 @@ registry.resolve(:aki) # => 'Aki'
 
 ## Class Level
 
-You can register registries on the class level simply by extending your class with `NxtRegistry`
+You can add registries on the class level simply by extending your class with `NxtRegistry`
 
 ```ruby
 class OtherExample
@@ -130,16 +130,40 @@ class Layer
   end
 end
 
+# On every upper level every resolve returns a registry 
 Layer.registry(:from) # => Registry[from]
-
 Layer.registry(:from).resolve(:munich) # => Registry[to] -> {}
 Layer.registry(:from).resolve(:amsterdam) # => Registry[to] -> {}
 Layer.registry(:from).resolve(:any_key) # => Registry[to] -> {}
-
 Layer.registry(:from).resolve(:munich, :amsterdam) # => Registry[via] -> {}
+
+# Register a value on the bottom level
 Layer.registry(:from).resolve(:munich, :amsterdam).register(:train, -> { 'train' })
+# Resolve the complete path 
 Layer.registry(:from).resolve(:munich, :amsterdam, :train) #  => 'train'
 ``` 
+
+For registries with multiple levels the normal syntax for registering and resolving becomes quite weird and unreadable. This is why
+every registry can be accessed through it's name or a custom accessor. The above example then can be simplified as follows.
+
+```ruby
+class Layer
+  extend NxtRegistry
+  
+  registry :path, accessor: :from do # registry named path, can be accessed with .from(...)
+    level :to do
+      level :via
+    end  
+  end
+end
+
+# Register a value
+Layer.registry(:path).from(:munich).to(:amsterdam).via(:train, -> { 'train' })
+# Resolve the complete path
+Layer.registry(:path).from(:munich).to(:amsterdam).via(:train) #  => 'train'
+```
+
+*Note that this feature is also available for registries with a single level only.*
 
 ### Restrict attributes to a certain set
 

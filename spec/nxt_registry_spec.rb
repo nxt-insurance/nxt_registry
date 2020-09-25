@@ -286,6 +286,72 @@ RSpec.describe NxtRegistry do
     end
   end
 
+  describe 'accessor option' do
+    context 'with levels' do
+      subject do
+        NxtRegistry::Registry.new(:path, accessor: :from) do
+          level :to do
+            level :via do
+              resolver ->(value) { "The passenger travels via: #{value}" }
+            end
+          end
+        end
+      end
+
+      it 'defines custom accessors' do
+        subject.from(:a).to(:b).via(:train, 'ICE')
+        expect(subject.from(:a).to(:b).via(:train)).to eq('The passenger travels via: ICE')
+      end
+    end
+
+    context 'when nested' do
+      subject do
+        extend NxtRegistry
+
+        registry :developers do
+          register(:frontend, accessor: :dev) do
+            register(:igor, 'Igor')
+            register(:ben, 'Ben')
+          end
+
+          register(:backend, default: -> { 'Rubyist' }, accessor: :dev) do
+            register(:rapha, 'Rapha')
+            register(:aki, 'Aki')
+          end
+        end
+      end
+
+      it 'defines custom accessors' do
+        expect(subject.developers(:frontend).dev(:igor)).to eq('Igor')
+        expect(subject.developers(:backend).dev(:rapha)).to eq('Rapha')
+      end
+    end
+
+    context 'when flat' do
+      let(:test_class) do
+        Class.new do
+          include NxtRegistry
+
+          def devs
+            registry :developers, accessor: :dev do
+              register(:anthony, 'Anthony')
+              register(:scotty, 'Scotty')
+              register(:nils, 'Nils')
+            end
+          end
+        end
+      end
+
+      subject { test_class.new }
+
+      it 'defines custom accessors' do
+        expect(subject.devs.dev(:anthony)).to eq('Anthony')
+        expect(subject.devs.dev(:scotty)).to eq('Scotty')
+        expect(subject.devs.dev(:nils)).to eq('Nils')
+      end
+    end
+  end
+
   describe '#on_key_already_registered' do
     subject do
       NxtRegistry::Registry.new(:test) do
@@ -393,7 +459,7 @@ RSpec.describe NxtRegistry do
       subject { test_class.new }
 
       it do
-        expect(subject.registry(:developers)).to eq(subject.devs)
+        expect(subject.devs).to eq(subject.registry(:developers))
       end
     end
   end
