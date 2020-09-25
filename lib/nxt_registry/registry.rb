@@ -9,12 +9,14 @@ module NxtRegistry
       @config = config
       @store = {}
       @attrs = nil
+      @configured = false
 
       setup_defaults(options)
       configure(&config) if block_given? || parent
     end
 
     attr_reader :name
+    attr_accessor :configured
 
     def level(name, **options, &config)
       options = options.merge(parent: self)
@@ -141,6 +143,8 @@ module NxtRegistry
           instance_exec(&block)
         end
       end
+
+      self.configured = true
     end
 
     def to_s

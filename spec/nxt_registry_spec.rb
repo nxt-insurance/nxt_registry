@@ -459,7 +459,7 @@ RSpec.describe NxtRegistry do
       subject { test_class.new }
 
       it do
-        expect(subject.registry(:developers)).to eq(subject.devs)
+        expect(subject.devs).to eq(subject.registry(:developers))
       end
     end
   end

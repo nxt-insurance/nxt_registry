@@ -19,11 +19,22 @@ module NxtRegistry
   private
 
   def build_registry(registry_class, name, **options, &config)
-    return registries.fetch(name) if registries.key?(name)
+    if registries.key?(name)
+      registry = registries.fetch(name)
+      if registry.configured
+        registry
+      else
+        raise_unconfigured_registry_accessed(name)
+      end
+    else
+      registry = registry_class.new(name, **options, &config)
+      registries[name] ||= registry
+      registry
+    end
+  end
 
-    registry = registry_class.new(name, **options, &config)
-    registries[name] ||= registry
-    registry
+  def raise_unconfigured_registry_accessed(name)
+    raise ArgumentError, "The registry #{name} must be configured before accessed!"
   end
 
   def registries
