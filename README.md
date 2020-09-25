@@ -143,7 +143,7 @@ Layer.registry(:from).resolve(:munich, :amsterdam).register(:train, -> { 'train'
 Layer.registry(:from).resolve(:munich, :amsterdam, :train) #  => 'train'
 ``` 
 
-For registries with multiple levels the normal syntax for registering and resolving becomes quote weird and unreadable. This is why
+For registries with multiple levels the normal syntax for registering and resolving becomes quite weird and unreadable. This is why
 every registry can be accessed through it's name or a custom accessor. The above example then can be simplified as follows.
 
 ```ruby
