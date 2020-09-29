@@ -1,3 +1,7 @@
+# v0.3.2 2020-09-29
+
+- Fix interface definition
+
 # v0.3.1 2020-09-23
 
 - Allow to define custom accessors for registries
