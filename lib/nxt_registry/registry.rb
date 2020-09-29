@@ -12,7 +12,7 @@ module NxtRegistry
       @configured = false
 
       setup_defaults(options)
-      configure(&config) if block_given? || parent
+      configure(&config)
     end
 
     attr_reader :name
@@ -156,7 +156,7 @@ module NxtRegistry
     private
 
     attr_reader :namespace, :parent, :config, :store, :options, :accessor
-    attr_accessor :is_leaf
+    attr_accessor :is_leaf, :interface_defined
 
     def is_leaf?
       @is_leaf
@@ -209,6 +209,8 @@ module NxtRegistry
     end
 
     def define_interface
+      return if interface_defined
+
       raise_invalid_accessor_name(accessor) if respond_to?(accessor)
       accessor_with_bang = "#{accessor}!"
       raise_invalid_accessor_name(accessor_with_bang) if respond_to?(accessor_with_bang)
@@ -236,6 +238,8 @@ module NxtRegistry
           register!(key, value)
         end
       end
+
+      self.interface_defined = true
     end
 
     def setup_defaults(options)
