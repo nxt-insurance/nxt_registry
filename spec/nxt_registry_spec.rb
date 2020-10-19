@@ -50,6 +50,58 @@ RSpec.describe NxtRegistry do
     end
   end
 
+  context 'with patterns' do
+    subject do
+      extend NxtRegistry
+
+      registry :developers do
+        call(false)
+      end
+    end
+
+    context 'when the key was not registered before' do
+      it do
+        subject.register(/\d+/, ->(arg) { "#{arg} bottles of beer" })
+        expect(subject.resolve(:test)).to be_nil
+        expect(subject.resolve(123).call('Lütfi')).to eq('Lütfi Demirci')
+      end
+    end
+
+    context 'when the key was already registered before' do
+      it do
+        subject.register(:callback, ->(arg) { "#{arg} Demirci" })
+
+        expect {
+          subject.register(:callback, ->(arg) { "#{arg} Demirci" })
+        }.to raise_error KeyError, "Key 'callback' already registered in registry 'developers'"
+      end
+    end
+
+    describe '#fetch' do
+      context 'when the key is missing' do
+        context 'and no default is given' do
+          it 'raises an error' do
+            expect { subject.fetch(:missing) }.to raise_error KeyError
+          end
+        end
+
+        context 'and a default is given' do
+          context 'default value' do
+            it 'returns the default' do
+              expect(subject.fetch(:missing, 'not missing')).to eq('not missing')
+            end
+          end
+
+          context 'default block' do
+            it 'returns the default' do
+              expect(subject.fetch(:missing) { 'not missing' }).to eq('not missing')
+            end
+          end
+        end
+      end
+    end
+  end
+
   context 'registering nested registries' do
     subject do
       extend NxtRegistry

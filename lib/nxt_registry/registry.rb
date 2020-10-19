@@ -10,6 +10,7 @@ module NxtRegistry
       @store = {}
       @attrs = nil
       @configured = false
+      @patterns = []
 
       setup_defaults(options)
       configure(&config)
@@ -155,7 +156,7 @@ module NxtRegistry
 
     private
 
-    attr_reader :namespace, :parent, :config, :store, :options, :accessor
+    attr_reader :namespace, :parent, :config, :store, :options, :accessor, :patterns
     attr_accessor :is_leaf, :interface_defined
 
     def is_leaf?
@@ -163,7 +164,12 @@ module NxtRegistry
     end
 
     def __register(key, value, raise_on_key_already_registered: true)
-      key = transformed_key(key)
+      key = if key.is_a?(Regexp)
+        patterns << key
+        key
+      else
+        transformed_key(key)
+      end
 
       raise ArgumentError, "Not allowed to register values in a registry that contains nested registries" unless is_leaf
       raise KeyError, "Keys are restricted to #{attrs.keys}" if attribute_not_allowed?(key)
@@ -174,7 +180,7 @@ module NxtRegistry
     end
 
     def __resolve(key, raise_on_key_not_registered: true)
-      key = transformed_key(key)
+      key = matching_key(key)
 
       value = if is_leaf?
         if store.key?(key)
@@ -206,6 +212,13 @@ module NxtRegistry
       else
         value
       end
+    end
+
+    def matching_key(key)
+      key = transformed_key(key)
+      return key if store.key?(key)
+
+      patterns.find { |pattern| key.match?(pattern) } || key
     end
 
     def define_interface
@@ -247,7 +260,7 @@ module NxtRegistry
       @memoize = options.fetch(:memoize) { true }
       @call = options.fetch(:call) { true }
       @resolver = options.fetch(:resolver, false)
-      @transform_keys = options.fetch(:transform_keys) { ->(key) { key.to_s } }
+      @transform_keys = options.fetch(:transform_keys) { ->(key) { key.is_a?(Regexp) ? key : key.to_s } }
       @accessor = options.fetch(:accessor) { name }
 
       @on_key_already_registered = options.fetch(:on_key_already_registered) { ->(key) { raise_key_already_registered_error(key) } }
