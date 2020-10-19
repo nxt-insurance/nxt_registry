@@ -127,7 +127,8 @@ module NxtRegistry
     end
 
     def fetch(key, *args, &block)
-      store.fetch(transformed_key(key), *args, &block)
+      key = matching_key(key)
+      store.fetch(key, *args, &block)
     end
 
     delegate :size, :values, :each, :freeze, to: :store
@@ -224,11 +225,11 @@ module NxtRegistry
     def define_interface
       return if interface_defined
 
-      raise_invalid_accessor_name(accessor) if respond_to?(accessor)
+      raise_invalid_accessor_name(accessor) if respond_to?(accessor.to_s)
       accessor_with_bang = "#{accessor}!"
       raise_invalid_accessor_name(accessor_with_bang) if respond_to?(accessor_with_bang)
 
-      define_singleton_method accessor do |key = Blank.new, value = Blank.new|
+      define_singleton_method accessor.to_s do |key = Blank.new, value = Blank.new|
         return self if is_a_blank?(key)
 
         key = transformed_key(key)
@@ -322,6 +323,7 @@ module NxtRegistry
       super
       @store = original.send(:store).deep_dup
       @options = original.send(:options).deep_dup
+      @patterns = original.send(:patterns).dup
     end
 
     def build_namespace
