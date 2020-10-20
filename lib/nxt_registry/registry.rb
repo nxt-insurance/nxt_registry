@@ -226,7 +226,8 @@ module NxtRegistry
       return value if value.is_a?(NxtRegistry::Registry)
       return value unless value.respond_to?(:call)
 
-      value.call(*[key].take(value.arity))
+      args = [key, value]
+      value.call(*args.take(value.arity))
     end
 
     def matching_pattern(key)
