@@ -181,11 +181,13 @@ module NxtRegistry
     end
 
     def __resolve(key, raise_on_key_not_registered: true)
-      key = matching_key(key)
+      key = transformed_key(key)
 
       value = if is_leaf?
         if store.key?(key)
           store.fetch(key)
+        elsif (pattern = matching_pattern(key))
+          store.fetch(pattern)
         else
           if is_a_blank?(default)
             return unless raise_on_key_not_registered
@@ -202,11 +204,7 @@ module NxtRegistry
         store[key] ||= default.call
       end
 
-      value = if value.respond_to?(:call) && call && !value.is_a?(NxtRegistry::Registry)
-        value.call(*[value].take(value.arity))
-      else
-        value
-      end
+      value = call_or_value(value, key)
 
       if resolver
         resolver.call(value)
@@ -217,9 +215,22 @@ module NxtRegistry
 
     def matching_key(key)
       key = transformed_key(key)
+      # if key is present it always wins over patterns
       return key if store.key?(key)
 
-      patterns.find { |pattern| key.match?(pattern) } || key
+      matching_pattern(key) || key
+    end
+
+    def call_or_value(value, key)
+      return value unless call
+      return value if value.is_a?(NxtRegistry::Registry)
+      return value unless value.respond_to?(:call)
+
+      value.call(*[key].take(value.arity))
+    end
+
+    def matching_pattern(key)
+      patterns.find { |pattern| key.match?(pattern) }
     end
 
     def define_interface
