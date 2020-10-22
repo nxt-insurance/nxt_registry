@@ -182,6 +182,29 @@ RSpec.describe NxtRegistry do
     end
   end
 
+  context 'inheriting options in nested registries' do
+    subject do
+      extend NxtRegistry
+
+      registry :developers, default: 'options can be inherited' do
+        register(:frontend, inherit_options: true) do
+          register(:igor, 'Igor')
+          register(:ben, 'Ben')
+        end
+
+        register(:backend, default: -> { 'Rubyist' }) do
+          register(:rapha, 'Rapha')
+          register(:aki, 'Aki')
+        end
+      end
+    end
+
+    it do
+      expect(subject.resolve(:frontend).resolve(:no_registered)).to eq('options can be inherited')
+      expect(subject.resolve(:backend).resolve(:no_registered)).to eq('Rubyist')
+    end
+  end
+
   context 'nesting with patterns' do
     subject do
       extend NxtRegistry
