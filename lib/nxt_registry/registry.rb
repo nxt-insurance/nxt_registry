@@ -39,13 +39,18 @@ module NxtRegistry
     end
 
     def registry(name, **options, &config)
-      opts = options.merge(parent: self)
+      opts = conditionally_inherit_options(options)
       register(name, Registry.new(name, **opts, &config))
     end
 
     def registry!(name, **options, &config)
-      opts = options.merge(parent: self)
+      opts = conditionally_inherit_options(options)
       register!(name, Registry.new(name, **opts, &config))
+    end
+
+    def conditionally_inherit_options(opts)
+      base = opts.delete(:inherit_options) ? options : {}
+      base.merge(opts).merge(parent: self)
     end
 
     def attr(name)
