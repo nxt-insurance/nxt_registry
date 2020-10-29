@@ -196,7 +196,7 @@ module NxtRegistry
       end
 
       value = if value.respond_to?(:call) && call && !value.is_a?(NxtRegistry::Registry)
-        value.call(*[value].take(value.arity))
+        value.call(*[key].take(value.arity))
       else
         value
       end

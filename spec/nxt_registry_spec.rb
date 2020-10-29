@@ -2,16 +2,13 @@ RSpec.describe NxtRegistry do
   context 'shallow registry' do
     subject do
       extend NxtRegistry
-
-      registry :developers do
-        call(false)
-      end
+      registry :developers
     end
 
     context 'when the key was not registered before' do
       it do
-        subject.register(:callback, ->(arg) { "#{arg} Demirci" })
-        expect(subject.resolve(:callback).call('Lütfi')).to eq('Lütfi Demirci')
+        subject.register(:callback, ->(arg) { "#{arg} done" })
+        expect(subject.resolve(:callback)).to eq('callback done')
       end
     end
 
