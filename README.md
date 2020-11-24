@@ -83,6 +83,30 @@ OtherExample.registry(:errors).resolve(KeyError)
 OtherExample.registry(:country_codes).resolve(:germany)
 # => :de
 ```
+
+## Register Patterns
+
+You can also register values with patterns as keys. Non pattern keys are always evaluated first and then patterns 
+will be tried to match by definition sequence.  
+
+```ruby
+class Example
+  extend NxtRegistry
+  
+  registry :status_codes do
+    register(/\A4\d{2}\z/, 'Client errors')
+    register(/\A5.*\z/, 'Server errors')
+    register('422', 'Unprocessable Entity')
+    register(:'503', 'Internal Server Error')
+  end
+end
+
+Example.registry(:status_codes).resolve('503') # => "Internal Server Error"
+Example.registry(:status_codes).resolve(503) # => "Internal Server Error"
+Example.registry(:status_codes).resolve(422) # => "Unprocessable Entity"
+Example.registry(:status_codes).resolve(404) # => "Client Errors"
+```
+
 ### Readers
 
 Access your defined registries with the `registry(:country_code)` method.
