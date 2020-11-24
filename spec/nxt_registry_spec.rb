@@ -101,6 +101,60 @@ RSpec.describe NxtRegistry do
     end
   end
 
+  context 'with patterns' do
+    subject do
+      extend NxtRegistry
+
+      registry :developers do
+        call(false)
+      end
+    end
+
+    context 'when the key was not registered before' do
+      it do
+        subject.register(/\d+/, 'This must be a number')
+        subject.register(/\w+/, 'This must be a string')
+
+        expect(subject.resolve('123')).to eq('This must be a number')
+        expect(subject.resolve('Lütfi')).to eq('This must be a string')
+      end
+    end
+
+    context 'when the key was already registered before' do
+      it do
+        subject.register(/\d+/, 'This must be a number')
+
+        expect {
+          subject.register(/\d+/, 'This must be a number')
+        }.to raise_error KeyError, "Key '(?-mix:\\d+)' already registered in registry 'developers'"
+      end
+    end
+
+    describe '#fetch' do
+      context 'when the key is missing' do
+        context 'and no default is given' do
+          it 'raises an error' do
+            expect { subject.fetch(:missing) }.to raise_error KeyError
+          end
+        end
+
+        context 'and a default is given' do
+          context 'default value' do
+            it 'returns the default' do
+              expect(subject.fetch(:missing, 'not missing')).to eq('not missing')
+            end
+          end
+
+          context 'default block' do
+            it 'returns the default' do
+              expect(subject.fetch(:missing) { 'not missing' }).to eq('not missing')
+            end
+          end
+        end
+      end
+    end
+  end
+
   context 'registering nested registries' do
     subject do
       extend NxtRegistry
