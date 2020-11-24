@@ -1,3 +1,7 @@
+# v0.3.3 2020-11-24
+
+- Fix: Pass key to resolver instead of value 
+
 # v0.3.2 2020-09-29
 
 - Fix interface definition
