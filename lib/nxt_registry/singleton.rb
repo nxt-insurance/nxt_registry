@@ -2,12 +2,12 @@ module NxtRegistry
   module Singleton
     include NxtRegistry
 
-    def registry(**options, &config)
-      build_registry(Registry, self.class.name, **options, &config)
+    def self.included(base)
+      base.extend(self)
     end
 
-    def recursive_registry(**options, &config)
-      build_registry(RecursiveRegistry, self.class.name, **options, &config)
+    def registry(type = Registry, **options, &config)
+      @registry ||= build_registry(type, self.class.name, **options, &config)
     end
 
     delegate_missing_to :registry
