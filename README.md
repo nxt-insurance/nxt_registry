@@ -27,24 +27,23 @@ Or install it yourself as:
 
 ## Instance Level
 
-To use `NxtRegistry` on an instance level simply include it and build registries like so: 
+If you simply need a single global instance of a registry include `NxtRegistry::Singleton`:    
 
 ```ruby
 class Example
-  include NxtRegistry
+  include NxtRegistry::Singleton
   
-  registry :languages do
+  registry do
     register(:ruby, 'Stone')
     register(:python, 'Snake')
     register(:javascript, 'undefined')
   end
 end
 
-example = Example.new
-example.registry(:languages).resolve(:ruby) # => 'Stone'
+Example.resolve(:ruby) # => 'Stone'
 ```
 
-Alternatively you can also create instances of `NxtRegistry::Registry`
+Alternatively you can simply create instances of `NxtRegistry::Registry`:
 
 ```ruby
 registry = NxtRegistry::Registry.new do
@@ -59,7 +58,7 @@ registry.resolve(:aki) # => 'Aki'
 
 ## Class Level
 
-You can add registries on the class level simply by extending your class with `NxtRegistry`
+You can also add registries on the class level simply by extending your class with `NxtRegistry`
 
 ```ruby
 class OtherExample
