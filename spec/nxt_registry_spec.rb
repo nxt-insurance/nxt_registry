@@ -47,6 +47,114 @@ RSpec.describe NxtRegistry do
     end
   end
 
+  context 'with patterns' do
+    subject do
+      extend NxtRegistry
+
+      registry :developers do
+        call(false)
+      end
+    end
+
+    context 'when the key was not registered before' do
+      it do
+        subject.register(/\d+/, 'This must be a number')
+        subject.register(/\w+/, 'This must be a string')
+
+        expect(subject.resolve('123')).to eq('This must be a number')
+        expect(subject.resolve('Lütfi')).to eq('This must be a string')
+      end
+    end
+
+    context 'when the key was already registered before' do
+      it do
+        subject.register(/\d+/, 'This must be a number')
+
+        expect {
+          subject.register(/\d+/, 'This must be a number')
+        }.to raise_error KeyError, "Key '(?-mix:\\d+)' already registered in registry 'developers'"
+      end
+    end
+
+    describe '#fetch' do
+      context 'when the key is missing' do
+        context 'and no default is given' do
+          it 'raises an error' do
+            expect { subject.fetch(:missing) }.to raise_error KeyError
+          end
+        end
+
+        context 'and a default is given' do
+          context 'default value' do
+            it 'returns the default' do
+              expect(subject.fetch(:missing, 'not missing')).to eq('not missing')
+            end
+          end
+
+          context 'default block' do
+            it 'returns the default' do
+              expect(subject.fetch(:missing) { 'not missing' }).to eq('not missing')
+            end
+          end
+        end
+      end
+    end
+  end
+
+  context 'with patterns' do
+    subject do
+      extend NxtRegistry
+
+      registry :developers do
+        call(false)
+      end
+    end
+
+    context 'when the key was not registered before' do
+      it do
+        subject.register(/\d+/, 'This must be a number')
+        subject.register(/\w+/, 'This must be a string')
+
+        expect(subject.resolve('123')).to eq('This must be a number')
+        expect(subject.resolve('Lütfi')).to eq('This must be a string')
+      end
+    end
+
+    context 'when the key was already registered before' do
+      it do
+        subject.register(/\d+/, 'This must be a number')
+
+        expect {
+          subject.register(/\d+/, 'This must be a number')
+        }.to raise_error KeyError, "Key '(?-mix:\\d+)' already registered in registry 'developers'"
+      end
+    end
+
+    describe '#fetch' do
+      context 'when the key is missing' do
+        context 'and no default is given' do
+          it 'raises an error' do
+            expect { subject.fetch(:missing) }.to raise_error KeyError
+          end
+        end
+
+        context 'and a default is given' do
+          context 'default value' do
+            it 'returns the default' do
+              expect(subject.fetch(:missing, 'not missing')).to eq('not missing')
+            end
+          end
+
+          context 'default block' do
+            it 'returns the default' do
+              expect(subject.fetch(:missing) { 'not missing' }).to eq('not missing')
+            end
+          end
+        end
+      end
+    end
+  end
+
   context 'registering nested registries' do
     subject do
       extend NxtRegistry
@@ -71,6 +179,29 @@ RSpec.describe NxtRegistry do
 
       expect(subject.resolve!(:backend, :other)).to eq('Rubyist')
       expect { subject.resolve!(:fronted, :other) }.to raise_error(KeyError)
+    end
+  end
+
+  context 'nesting with patterns' do
+    subject do
+      extend NxtRegistry
+
+      registry :status_codes do
+        register(/4\d{2}/) do
+          register(400, 'Bad Request')
+          register(404, 'Not Found')
+        end
+
+        register(/5\d{2}/) do
+          register(500, 'Internal Server Error')
+          register(503, 'Service Unavailable')
+        end
+      end
+    end
+
+    it do
+      expect(subject.resolve(400).resolve(404)).to eq('Not Found')
+      expect(subject.resolve(500).resolve(503)).to eq('Service Unavailable')
     end
   end
 
@@ -388,6 +519,11 @@ RSpec.describe NxtRegistry do
     it 'clones the store' do
       expect { clone.register(:luetfi, 'legend') }.to_not change { subject.developers.to_h }
       expect { subject.register(:rapha, 'dog') }.to_not change { clone.developers.to_h }
+    end
+
+    it 'clones patterns' do
+      expect { clone.register(/\d+/, '123') }.to_not change { subject.send(:patterns) }
+      expect { subject.register(/\w+/, 'dog') }.to_not change { clone.send(:patterns) }
     end
   end
 

@@ -10,6 +10,7 @@ module NxtRegistry
       @store = {}
       @attrs = nil
       @configured = false
+      @patterns = []
 
       setup_defaults(options)
       configure(&config)
@@ -126,7 +127,8 @@ module NxtRegistry
     end
 
     def fetch(key, *args, &block)
-      store.fetch(transformed_key(key), *args, &block)
+      key = matching_key(key)
+      store.fetch(key, *args, &block)
     end
 
     delegate :size, :values, :each, :freeze, to: :store
@@ -155,7 +157,7 @@ module NxtRegistry
 
     private
 
-    attr_reader :namespace, :parent, :config, :store, :options, :accessor
+    attr_reader :namespace, :parent, :config, :store, :options, :accessor, :patterns
     attr_accessor :is_leaf, :interface_defined
 
     def is_leaf?
@@ -163,7 +165,12 @@ module NxtRegistry
     end
 
     def __register(key, value, raise_on_key_already_registered: true)
-      key = transformed_key(key)
+      key = if key.is_a?(Regexp)
+        patterns << key
+        key
+      else
+        transformed_key(key)
+      end
 
       raise ArgumentError, "Not allowed to register values in a registry that contains nested registries" unless is_leaf
       raise KeyError, "Keys are restricted to #{attrs.keys}" if attribute_not_allowed?(key)
@@ -179,6 +186,8 @@ module NxtRegistry
       value = if is_leaf?
         if store.key?(key)
           store.fetch(key)
+        elsif (pattern = matching_pattern(key))
+          store.fetch(pattern)
         else
           if is_a_blank?(default)
             return unless raise_on_key_not_registered
@@ -195,11 +204,7 @@ module NxtRegistry
         store[key] ||= default.call
       end
 
-      value = if value.respond_to?(:call) && call && !value.is_a?(NxtRegistry::Registry)
-        value.call(*[key].take(value.arity))
-      else
-        value
-      end
+      value = call_or_value(value, key)
 
       if resolver
         resolver.call(value)
@@ -208,14 +213,35 @@ module NxtRegistry
       end
     end
 
+    def matching_key(key)
+      key = transformed_key(key)
+      # if key is present it always wins over patterns
+      return key if store.key?(key)
+
+      matching_pattern(key) || key
+    end
+
+    def call_or_value(value, key)
+      return value unless call
+      return value if value.is_a?(NxtRegistry::Registry)
+      return value unless value.respond_to?(:call)
+
+      args = [key, value]
+      value.call(*args.take(value.arity))
+    end
+
+    def matching_pattern(key)
+      patterns.find { |pattern| key.match?(pattern) }
+    end
+
     def define_interface
       return if interface_defined
 
-      raise_invalid_accessor_name(accessor) if respond_to?(accessor)
+      raise_invalid_accessor_name(accessor) if respond_to?(accessor.to_s)
       accessor_with_bang = "#{accessor}!"
       raise_invalid_accessor_name(accessor_with_bang) if respond_to?(accessor_with_bang)
 
-      define_singleton_method accessor do |key = Blank.new, value = Blank.new|
+      define_singleton_method accessor.to_s do |key = Blank.new, value = Blank.new|
         return self if is_a_blank?(key)
 
         key = transformed_key(key)
@@ -247,7 +273,7 @@ module NxtRegistry
       @memoize = options.fetch(:memoize) { true }
       @call = options.fetch(:call) { true }
       @resolver = options.fetch(:resolver, false)
-      @transform_keys = options.fetch(:transform_keys) { ->(key) { key.to_s } }
+      @transform_keys = options.fetch(:transform_keys) { ->(key) { key.is_a?(Regexp) ? key : key.to_s } }
       @accessor = options.fetch(:accessor) { name }
 
       @on_key_already_registered = options.fetch(:on_key_already_registered) { ->(key) { raise_key_already_registered_error(key) } }
@@ -309,6 +335,7 @@ module NxtRegistry
       super
       @store = original.send(:store).deep_dup
       @options = original.send(:options).deep_dup
+      @patterns = original.send(:patterns).dup
     end
 
     def build_namespace
