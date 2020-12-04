@@ -1,7 +1,7 @@
 PATH
   remote: .
   specs:
-    nxt_registry (0.3.3)
+    nxt_registry (0.3.4)
       activesupport
 
 GEM
@@ -42,7 +42,7 @@ GEM
     thread_safe (0.3.6)
     tzinfo (1.2.8)
       thread_safe (~> 0.1)
-    zeitwerk (2.4.1)
+    zeitwerk (2.4.2)
 
 PLATFORMS
   ruby
