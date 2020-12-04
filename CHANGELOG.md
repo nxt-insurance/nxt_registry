@@ -1,3 +1,8 @@
+# v0.3.4 2020-12-04
+
+- Bring back Singleton
+- Fix mistakes in readme
+
 # v0.3.3 2020-11-24
 
 - Fix: Pass key to resolver instead of value 

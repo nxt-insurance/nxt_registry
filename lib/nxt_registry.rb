@@ -6,6 +6,7 @@ require 'nxt_registry/errors'
 require 'nxt_registry/registry_builder'
 require 'nxt_registry/registry'
 require 'nxt_registry/recursive_registry'
+require 'nxt_registry/singleton'
 
 module NxtRegistry
   def registry(name, **options, &config)
@@ -19,17 +20,17 @@ module NxtRegistry
   private
 
   def build_registry(registry_class, name, **options, &config)
-    if registries.key?(name)
-      registry = registries.fetch(name)
+    registry = registries.resolve(name)
+
+    if registry.present?
       if registry.configured
-        registry
+        return registry
       else
         raise_unconfigured_registry_accessed(name)
       end
     else
       registry = registry_class.new(name, **options, &config)
-      registries[name] ||= registry
-      registry
+      registries.register(name, registry)
     end
   end
 
@@ -38,6 +39,6 @@ module NxtRegistry
   end
 
   def registries
-    @registries ||= {}
+    @registries ||= Registry.new(:registries)
   end
 end
