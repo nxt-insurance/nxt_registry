@@ -1,3 +1,7 @@
+# v0.3.5 2020-12-04
+
+- Allow patterns as keys
+
 # v0.3.4 2020-12-04
 
 - Bring back Singleton
