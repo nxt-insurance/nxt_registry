@@ -1,3 +1,7 @@
+# v0.3.5 2020-12-23
+
+- Allow to inherit options in nested registries
+
 # v0.3.5 2020-12-04
 
 - Allow patterns as keys
