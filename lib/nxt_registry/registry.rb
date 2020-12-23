@@ -39,12 +39,12 @@ module NxtRegistry
     end
 
     def registry(name, **options, &config)
-      opts = options.merge(parent: self)
+      opts = conditionally_inherit_options(options)
       register(name, Registry.new(name, **opts, &config))
     end
 
     def registry!(name, **options, &config)
-      opts = options.merge(parent: self)
+      opts = conditionally_inherit_options(options)
       register!(name, Registry.new(name, **opts, &config))
     end
 
@@ -159,6 +159,11 @@ module NxtRegistry
 
     attr_reader :namespace, :parent, :config, :store, :options, :accessor, :patterns
     attr_accessor :is_leaf, :interface_defined
+
+    def conditionally_inherit_options(opts)
+      base = opts.delete(:inherit_options) ? options : {}
+      base.merge(opts).merge(parent: self)
+    end
 
     def is_leaf?
       @is_leaf
