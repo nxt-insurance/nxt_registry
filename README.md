@@ -135,6 +135,23 @@ Nested.registry(:developers).resolve(:frontend, :igor)
 # => 'Igor'
 ```
 
+#### Inherit options in nested registries
+
+```ruby
+class Nested
+  extend NxtRegistry
+  
+  registry :developers, default: 'options can be inherited' do
+    register(:frontend, inherit_options: true) do
+      register(:igor, 'Igor')
+      register(:ben, 'Ben')
+    end
+  end
+end
+
+Nested.registry(:developers).resolve(:frontend, :blank)
+# => 'options can be inherited'
+```
 
 ### Defining specific nesting levels of a registry
 

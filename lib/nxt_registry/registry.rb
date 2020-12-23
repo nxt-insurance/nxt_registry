@@ -48,11 +48,6 @@ module NxtRegistry
       register!(name, Registry.new(name, **opts, &config))
     end
 
-    def conditionally_inherit_options(opts)
-      base = opts.delete(:inherit_options) ? options : {}
-      base.merge(opts).merge(parent: self)
-    end
-
     def attr(name)
       key = transformed_key(name)
       raise KeyError, "Attribute #{key} already registered in #{namespace}" if attrs[key]
@@ -164,6 +159,11 @@ module NxtRegistry
 
     attr_reader :namespace, :parent, :config, :store, :options, :accessor, :patterns
     attr_accessor :is_leaf, :interface_defined
+
+    def conditionally_inherit_options(opts)
+      base = opts.delete(:inherit_options) ? options : {}
+      base.merge(opts).merge(parent: self)
+    end
 
     def is_leaf?
       @is_leaf
