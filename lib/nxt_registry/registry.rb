@@ -48,11 +48,19 @@ module NxtRegistry
       register!(name, Registry.new(name, **opts, &config))
     end
 
+    def required_keys(*keys)
+
+    end
+
+    def allowed_keys(*keys)
+
+    end
+
     def attr(name)
       key = transformed_key(name)
       raise KeyError, "Attribute #{key} already registered in #{namespace}" if attrs[key]
 
-      attrs[key] = Attribute.new(key, self)
+      attrs[key] = Key.new(key, self)
     end
 
     def attrs(*args)

@@ -1,6 +1,6 @@
 module NxtRegistry
-  class Attribute
-    def initialize(name, registry, **options)
+  class Key
+    def initialize(name, registry)
       @name = name
       @registry = registry
       @namespace = [name, registry.send(:namespace)].join('.')
