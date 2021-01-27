@@ -289,7 +289,7 @@ RSpec.describe NxtRegistry do
 
         registry :from do
           level :to do
-            level :via, attrs: %i[c d]
+            level :via, allowed_keys: %i[c d]
           end
         end
       end
@@ -316,23 +316,6 @@ RSpec.describe NxtRegistry do
         end
       end
     end
-
-    context 'with the same attr defined multiple times' do
-      subject do
-        extend NxtRegistry
-
-        registry :from do
-          level :to do
-            attr :b
-            attr :b
-          end
-        end
-      end
-
-      it do
-        expect { subject }.to raise_error KeyError, "Attribute b already registered in from.to"
-      end
-    end
   end
 
   context 'recursive registry' do
@@ -340,7 +323,7 @@ RSpec.describe NxtRegistry do
       extend NxtRegistry
 
       recursive_registry :level_0 do
-        attr :andy
+        allowed_keys :andy
       end
     end
 
@@ -359,7 +342,7 @@ RSpec.describe NxtRegistry do
             registry :from do
               level :to do
                 level :via do
-                  attrs :train, :car, :plane, :horse
+                  allowed_keys :train, :car, :plane, :horse
                   self.default = -> { [] }
                   self.memoize = true
                   call true
@@ -525,28 +508,6 @@ RSpec.describe NxtRegistry do
 
     it do
       expect { subject.resolve!(:andy) }.to raise_error KeyError, "Key andy was never registered"
-    end
-  end
-
-  describe '#clone' do
-    subject do
-      extend NxtRegistry
-
-      registry :developers do
-        call(false)
-      end
-    end
-
-    let(:clone) { subject.clone }
-
-    it 'clones the store' do
-      expect { clone.register(:luetfi, 'legend') }.to_not change { subject.developers.to_h }
-      expect { subject.register(:rapha, 'dog') }.to_not change { clone.developers.to_h }
-    end
-
-    it 'clones patterns' do
-      expect { clone.register(/\d+/, '123') }.to_not change { subject.send(:patterns) }
-      expect { subject.register(/\w+/, 'dog') }.to_not change { clone.send(:patterns) }
     end
   end
 
