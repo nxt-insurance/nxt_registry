@@ -12,7 +12,6 @@ module NxtRegistry
       @patterns = []
       @config = config
 
-      setup_defaults(options)
       configure(&config)
     end
 
@@ -52,7 +51,7 @@ module NxtRegistry
       @required_keys ||= []
       return @required_keys if keys.empty?
 
-      @required_key += keys.map { |key| transformed_key(key) }
+      @required_keys += keys.map { |key| transformed_key(key) }
     end
 
     def allowed_keys(*keys)
@@ -134,6 +133,7 @@ module NxtRegistry
     delegate :size, :values, :each, :freeze, to: :store
 
     def configure(&block)
+      setup_defaults(options)
       define_accessors
       define_interface
       allowed_keys(*Array(options.fetch(:allowed_keys, [])))
@@ -171,7 +171,7 @@ module NxtRegistry
       required_keys.each do |key|
         next if store.key?(key)
 
-        raise RequiredKeyMissing, "Required key #{key} missing in #{self}"
+        raise Errors::RequiredKeyMissing, "Required key '#{key}' missing in #{self}"
       end
     end
 
