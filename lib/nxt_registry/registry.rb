@@ -61,6 +61,12 @@ module NxtRegistry
       @allowed_keys += keys.map { |key| transformed_key(key) }
     end
 
+    alias attrs allowed_keys # @deprecated
+
+    def attr(key)
+      allowed_keys(key) # @deprecated
+    end
+
     def register(key = Blank.new, value = Blank.new, **options, &block)
       if block_given?
         if is_a_blank?(value)
@@ -155,7 +161,7 @@ module NxtRegistry
       "Registry[#{name}] -> #{store.to_s}"
     end
 
-    alias_method :inspect, :to_s
+    alias inspect to_s
 
     private
 

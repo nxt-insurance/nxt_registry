@@ -318,12 +318,30 @@ RSpec.describe NxtRegistry do
     end
   end
 
+  context 'with attr called multiple times' do
+    subject do
+      extend NxtRegistry
+
+      registry :from do
+        level :to do
+          attr :b
+          attr :c
+        end
+      end
+    end
+
+    it 'allows any of the attributes to be registered' do
+      expect(subject.from(:a).to(:b, 'b')).to eq('b')
+      expect(subject.from(:a).to(:c, 'c')).to eq('c')
+    end
+  end
+
   context 'recursive registry' do
     subject do
       extend NxtRegistry
 
       recursive_registry :level_0 do
-        allowed_keys :andy
+        attr :andy
       end
     end
 
@@ -342,7 +360,7 @@ RSpec.describe NxtRegistry do
             registry :from do
               level :to do
                 level :via do
-                  allowed_keys :train, :car, :plane, :horse
+                  attrs :train, :car, :plane, :horse
                   self.default = -> { [] }
                   self.memoize = true
                   call true
