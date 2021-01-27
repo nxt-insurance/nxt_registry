@@ -205,12 +205,21 @@ Layer.registry(:path).from(:munich).to(:amsterdam).via(:train) #  => 'train'
 
 *Note that this feature is also available for registries with a single level only.*
 
-### Restrict attributes to a certain set
+### Restrict keys to a certain set
 
-Use `attrs` to restrict which attributes can be registered on a specific level.
+Use `allowed_keys` to restrict which keys can be registered on a specific level.
 
 ```ruby
-registry :example, attrs: %w[one two three]
+registry :example, allowed_keys: %w[one two three]
+```
+
+### Require a certain set of keys to be registered
+
+Use `required_keys` to enforce a certain set of keys to be registered on a specific level. This is especially helpful
+if you use registries in multiple places and you want to ensure they all register the same set of keys. 
+
+```ruby
+registry :example, required_keys: %w[one two three]
 ```
 
 ### Default values
