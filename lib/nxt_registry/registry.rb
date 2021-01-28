@@ -189,6 +189,8 @@ module NxtRegistry
       key = if key.is_a?(Regexp)
         patterns << key
         key
+      elsif key.respond_to?(:each)
+        key.each { |k| __register(k, value, raise_on_key_already_registered: raise_on_key_already_registered) }
       else
         transformed_key(key)
       end
