@@ -8,11 +8,10 @@ module NxtRegistry
       @namespace = build_namespace
       @config = config
       @store = {}
-      @attrs = nil
       @configured = false
       @patterns = []
+      @config = config
 
-      setup_defaults(options)
       configure(&config)
     end
 
@@ -48,18 +47,24 @@ module NxtRegistry
       register!(name, Registry.new(name, **opts, &config))
     end
 
-    def attr(name)
-      key = transformed_key(name)
-      raise KeyError, "Attribute #{key} already registered in #{namespace}" if attrs[key]
+    def required_keys(*keys)
+      @required_keys ||= []
+      return @required_keys if keys.empty?
 
-      attrs[key] = Attribute.new(key, self)
+      @required_keys += keys.map { |key| transformed_key(key) }
     end
 
-    def attrs(*args)
-      @attrs ||= {}
-      return @attrs unless args.any?
+    def allowed_keys(*keys)
+      @allowed_keys ||= []
+      return @allowed_keys if keys.empty?
 
-      args.each { |name| attr(name) }
+      @allowed_keys += keys.map { |key| transformed_key(key) }
+    end
+
+    alias attrs allowed_keys # @deprecated
+
+    def attr(key)
+      allowed_keys(key) # @deprecated
     end
 
     def register(key = Blank.new, value = Blank.new, **options, &block)
@@ -134,9 +139,11 @@ module NxtRegistry
     delegate :size, :values, :each, :freeze, to: :store
 
     def configure(&block)
+      setup_defaults(options)
       define_accessors
       define_interface
-      attrs(*Array(options.fetch(:attrs, [])))
+      allowed_keys(*Array(options.fetch(:allowed_keys, [])))
+      required_keys(*Array(options.fetch(:required_keys, [])))
 
       if block.present?
         if block.arity == 1
@@ -146,6 +153,7 @@ module NxtRegistry
         end
       end
 
+      validate_required_keys_given
       self.configured = true
     end
 
@@ -153,7 +161,7 @@ module NxtRegistry
       "Registry[#{name}] -> #{store.to_s}"
     end
 
-    alias_method :inspect, :to_s
+    alias inspect to_s
 
     private
 
@@ -163,6 +171,14 @@ module NxtRegistry
     def conditionally_inherit_options(opts)
       base = opts.delete(:inherit_options) ? options : {}
       base.merge(opts).merge(parent: self)
+    end
+
+    def validate_required_keys_given
+      required_keys.each do |key|
+        next if store.key?(key)
+
+        raise Errors::RequiredKeyMissing, "Required key '#{key}' missing in #{self}"
+      end
     end
 
     def is_leaf?
@@ -178,7 +194,7 @@ module NxtRegistry
       end
 
       raise ArgumentError, "Not allowed to register values in a registry that contains nested registries" unless is_leaf
-      raise KeyError, "Keys are restricted to #{attrs.keys}" if attribute_not_allowed?(key)
+      raise KeyError, "Keys are restricted to #{allowed_keys}" if key_not_allowed?(key)
 
       on_key_already_registered && on_key_already_registered.call(key) if store[key] && raise_on_key_already_registered
 
@@ -303,10 +319,10 @@ module NxtRegistry
       end
     end
 
-    def attribute_not_allowed?(key)
-      return if attrs.empty?
+    def key_not_allowed?(key)
+      return if allowed_keys.empty?
 
-      attrs.keys.exclude?(transformed_key(key))
+      allowed_keys.exclude?(transformed_key(key))
     end
 
     def resolve_default(key)
@@ -334,13 +350,6 @@ module NxtRegistry
           key
         end
       end
-    end
-
-    def initialize_copy(original)
-      super
-      @store = original.send(:store).deep_dup
-      @options = original.send(:options).deep_dup
-      @patterns = original.send(:patterns).dup
     end
 
     def build_namespace

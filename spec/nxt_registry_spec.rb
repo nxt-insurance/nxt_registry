@@ -289,7 +289,7 @@ RSpec.describe NxtRegistry do
 
         registry :from do
           level :to do
-            level :via, attrs: %i[c d]
+            level :via, allowed_keys: %i[c d]
           end
         end
       end
@@ -316,22 +316,23 @@ RSpec.describe NxtRegistry do
         end
       end
     end
+  end
 
-    context 'with the same attr defined multiple times' do
-      subject do
-        extend NxtRegistry
+  context 'with attr called multiple times' do
+    subject do
+      extend NxtRegistry
 
-        registry :from do
-          level :to do
-            attr :b
-            attr :b
-          end
+      registry :from do
+        level :to do
+          attr :b
+          attr :c
         end
       end
+    end
 
-      it do
-        expect { subject }.to raise_error KeyError, "Attribute b already registered in from.to"
-      end
+    it 'allows any of the attributes to be registered' do
+      expect(subject.from(:a).to(:b, 'b')).to eq('b')
+      expect(subject.from(:a).to(:c, 'c')).to eq('c')
     end
   end
 
@@ -525,28 +526,6 @@ RSpec.describe NxtRegistry do
 
     it do
       expect { subject.resolve!(:andy) }.to raise_error KeyError, "Key andy was never registered"
-    end
-  end
-
-  describe '#clone' do
-    subject do
-      extend NxtRegistry
-
-      registry :developers do
-        call(false)
-      end
-    end
-
-    let(:clone) { subject.clone }
-
-    it 'clones the store' do
-      expect { clone.register(:luetfi, 'legend') }.to_not change { subject.developers.to_h }
-      expect { subject.register(:rapha, 'dog') }.to_not change { clone.developers.to_h }
-    end
-
-    it 'clones patterns' do
-      expect { clone.register(/\d+/, '123') }.to_not change { subject.send(:patterns) }
-      expect { subject.register(/\w+/, 'dog') }.to_not change { clone.send(:patterns) }
     end
   end
 
