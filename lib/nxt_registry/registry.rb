@@ -367,5 +367,15 @@ module NxtRegistry
     def raise_invalid_accessor_name(name)
       raise ArgumentError, "#{self} already implements a method named: #{name}. Please choose a different accessor name"
     end
+
+    def initialize_copy(original)
+      super
+
+      containers = %i[store options]
+      variables = %i[patterns required_keys allowed_keys namespace on_key_already_registered on_key_not_registered]
+
+      containers.each { |c| instance_variable_set("@#{c}", original.send(c).deep_dup) }
+      variables.each { |v| instance_variable_set("@#{v}", original.send(v).dup) }
+    end
   end
 end
