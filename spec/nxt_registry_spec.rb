@@ -598,4 +598,36 @@ RSpec.describe NxtRegistry do
       end
     end
   end
+
+  describe '#clone' do
+    subject do
+      extend NxtRegistry
+
+      registry :developers do
+        call(false)
+      end
+    end
+
+    let(:clone) { subject.clone }
+
+    it 'clones the store' do
+      expect { clone.register(:luetfi, 'legend') }.to_not change { subject.developers.to_h }
+      expect { subject.register(:rapha, 'dog') }.to_not change { clone.developers.to_h }
+    end
+
+    it 'clones patterns' do
+      expect { clone.register(/\d+/, '123') }.to_not change { subject.send(:patterns) }
+      expect { subject.register(/\w+/, 'dog') }.to_not change { clone.send(:patterns) }
+    end
+
+    it 'clones required keys' do
+      expect { clone.required_keys(:andy) }.to_not change { subject.send(:required_keys) }
+      expect { subject.required_keys(:nils) }.to_not change { clone.send(:required_keys) }
+    end
+
+    it 'clones allowed keys' do
+      expect { clone.allowed_keys(:rapha) }.to_not change { subject.send(:allowed_keys) }
+      expect { subject.allowed_keys(:lütfi) }.to_not change { clone.send(:allowed_keys) }
+    end
+  end
 end
