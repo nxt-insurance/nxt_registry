@@ -206,9 +206,9 @@ module NxtRegistry
 
       value = if is_leaf?
         if store.key?(key)
-          store.fetch(presolver.call(key))
+          store.fetch(before_resolve.call(key))
         elsif (pattern = matching_pattern(key))
-          store.fetch(presolver.call(pattern))
+          store.fetch(before_resolve.call(pattern))
         else
           if is_a_blank?(default)
             return unless raise_on_key_not_registered
@@ -227,7 +227,7 @@ module NxtRegistry
 
       value = call_or_value(value, key)
 
-      resolver.call(value)
+      after_resolve.call(value)
     end
 
     def matching_key(key)
@@ -289,8 +289,8 @@ module NxtRegistry
       @default = options.fetch(:default) { Blank.new }
       @memoize = options.fetch(:memoize) { true }
       @call = options.fetch(:call) { true }
-      @resolver = options.fetch(:resolver, ->(val) { val })
-      @presolver = options.fetch(:presolver, ->(val) { val })
+      @after_resolve = options.fetch(:after_resolve, options.fetch(:resolver, ->(val) { val }))
+      @before_resolve = options.fetch(:before_resolve, ->(val) { val })
       @transform_keys = options.fetch(:transform_keys) { ->(key) { key.is_a?(Regexp) ? key : key.to_s } }
       @accessor = options.fetch(:accessor) { name }
 
@@ -299,7 +299,7 @@ module NxtRegistry
     end
 
     def define_accessors
-      %w[default memoize call resolver presolver transform_keys on_key_already_registered on_key_not_registered].each do |attribute|
+      %w[default memoize call after_resolve before_resolve transform_keys on_key_already_registered on_key_not_registered].each do |attribute|
         define_singleton_method attribute do |value = Blank.new, &block|
           value = block if block
 
@@ -313,6 +313,21 @@ module NxtRegistry
         define_singleton_method "#{attribute}=" do |value|
           instance_variable_set("@#{attribute}", value)
         end
+      end
+
+      # @deprecated
+      define_singleton_method :resolver do |value = Blank.new, &block|
+        value = block if block
+
+        if is_a_blank?(value)
+          instance_variable_get(:@after_resolve)
+        else
+          instance_variable_set(:@after_resolve, value)
+        end
+      end
+
+      define_singleton_method 'resolver=' do |value|
+        instance_variable_set(:@after_resolve, value)
       end
     end
 
