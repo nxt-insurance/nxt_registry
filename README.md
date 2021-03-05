@@ -2,8 +2,7 @@
 
 # NxtRegistry
 
-`NxtRegistry` is a simple implementation of the container pattern. It allows you to register and resolve values in nested 
-structures.
+`NxtRegistry` is a simple container that allows you to register and resolve values in nested structures.
 
 ## Installation
 
@@ -271,8 +270,8 @@ registry :example do
   register(:input, 'output')
 end
 
-registry.resolve(:one)
-# => '2'
+registry.resolve('  input   ')
+# => 'OUTPUT'
 ```
 
 ### Transform keys

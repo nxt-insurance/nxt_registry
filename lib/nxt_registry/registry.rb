@@ -205,10 +205,12 @@ module NxtRegistry
       key = transformed_key(key)
 
       value = if is_leaf?
-        if store.key?(key)
-          store.fetch(key_resolver.call(key))
-        elsif (pattern = matching_pattern(key))
-          store.fetch(key_resolver.call(pattern))
+        resolved_key = key_resolver.call(key)
+
+        if store.key?(resolved_key)
+          store.fetch(resolved_key)
+        elsif (pattern = matching_pattern(resolved_key))
+          store.fetch(pattern)
         else
           if is_a_blank?(default)
             return unless raise_on_key_not_registered
