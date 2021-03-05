@@ -206,9 +206,9 @@ module NxtRegistry
 
       value = if is_leaf?
         if store.key?(key)
-          store.fetch(key)
+          store.fetch(presolver.call(key))
         elsif (pattern = matching_pattern(key))
-          store.fetch(pattern)
+          store.fetch(presolver.call(pattern))
         else
           if is_a_blank?(default)
             return unless raise_on_key_not_registered
@@ -227,11 +227,7 @@ module NxtRegistry
 
       value = call_or_value(value, key)
 
-      if resolver
-        resolver.call(value)
-      else
-        value
-      end
+      resolver.call(value)
     end
 
     def matching_key(key)
@@ -293,7 +289,8 @@ module NxtRegistry
       @default = options.fetch(:default) { Blank.new }
       @memoize = options.fetch(:memoize) { true }
       @call = options.fetch(:call) { true }
-      @resolver = options.fetch(:resolver, false)
+      @resolver = options.fetch(:resolver, ->(val) { val })
+      @presolver = options.fetch(:presolver, ->(val) { val })
       @transform_keys = options.fetch(:transform_keys) { ->(key) { key.is_a?(Regexp) ? key : key.to_s } }
       @accessor = options.fetch(:accessor) { name }
 
@@ -302,7 +299,7 @@ module NxtRegistry
     end
 
     def define_accessors
-      %w[default memoize call resolver transform_keys on_key_already_registered on_key_not_registered].each do |attribute|
+      %w[default memoize call resolver presolver transform_keys on_key_already_registered on_key_not_registered].each do |attribute|
         define_singleton_method attribute do |value = Blank.new, &block|
           value = block if block
 
