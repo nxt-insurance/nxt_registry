@@ -11,11 +11,12 @@ module NxtRegistry
       @configured = false
       @patterns = []
       @config = config
+      @mutex = Mutex.new
 
       configure(&config)
     end
 
-    attr_reader :name
+    attr_reader :name, :mutex
     attr_accessor :configured
 
     def level(name, **options, &config)
@@ -186,50 +187,54 @@ module NxtRegistry
     end
 
     def __register(key, value, raise_on_key_already_registered: true)
-      key = if key.is_a?(Regexp)
-        patterns << key
-        key
-      else
-        transformed_key(key)
+      mutex.synchronize do
+        key = if key.is_a?(Regexp)
+          patterns << key
+          key
+        else
+          transformed_key(key)
+        end
+
+        raise ArgumentError, "Not allowed to register values in a registry that contains nested registries" unless is_leaf
+        raise KeyError, "Keys are restricted to #{allowed_keys}" if key_not_allowed?(key)
+
+        on_key_already_registered && on_key_already_registered.call(key) if store[key] && raise_on_key_already_registered
+
+        store[key] = value
       end
-
-      raise ArgumentError, "Not allowed to register values in a registry that contains nested registries" unless is_leaf
-      raise KeyError, "Keys are restricted to #{allowed_keys}" if key_not_allowed?(key)
-
-      on_key_already_registered && on_key_already_registered.call(key) if store[key] && raise_on_key_already_registered
-
-      store[key] = value
     end
 
     def __resolve(key, raise_on_key_not_registered: true)
-      key = transformed_key(key)
+      mutex.synchronize do
+        key = transformed_key(key)
 
-      value = if is_leaf?
-        resolved_key = key_resolver.call(key)
+        value = if is_leaf?
+          resolved_key = key_resolver.call(key)
 
-        if store.key?(resolved_key)
-          store.fetch(resolved_key)
-        elsif (pattern = matching_pattern(resolved_key))
-          store.fetch(pattern)
-        else
-          if is_a_blank?(default)
-            return unless raise_on_key_not_registered
-
-            on_key_not_registered && on_key_not_registered.call(key)
+          if store.key?(resolved_key)
+            store.fetch(resolved_key)
+          elsif (pattern = matching_pattern(resolved_key))
+            store.fetch(pattern)
           else
-            value = resolve_default(key)
-            return value unless memoize
+            if is_a_blank?(default)
+              return unless raise_on_key_not_registered
 
-            store[key] ||= value
+              on_key_not_registered && on_key_not_registered.call(key)
+            else
+              value = resolve_default(key)
+              return value unless memoize
+
+              store[key] ||= value
+            end
           end
+        else
+          store[key] ||= default.call
         end
-      else
-        store[key] ||= default.call
+
+        value = call_or_value(value, key)
+
+        resolver.call(value)
       end
-
-      value = call_or_value(value, key)
-
-      resolver.call(value)
     end
 
     def matching_key(key)
@@ -370,6 +375,7 @@ module NxtRegistry
     def initialize_copy(original)
       super
 
+      @mutex = Mutex.new
       containers = %i[store options]
       variables = %i[patterns required_keys allowed_keys namespace on_key_already_registered on_key_not_registered]
 
