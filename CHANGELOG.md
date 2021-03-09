@@ -1,3 +1,9 @@
+# v0.3.6 2021-03-10
+
+- Synchronize access with Mutex
+- Add key_resolver
+- Inherit options set through accessors
+
 # v0.3.5 2020-12-23
 
 - Allow to inherit options in nested registries

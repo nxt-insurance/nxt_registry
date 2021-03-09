@@ -313,11 +313,13 @@ module NxtRegistry
           if is_a_blank?(value)
             instance_variable_get("@#{attribute}")
           else
+            options[attribute.to_sym] ||= value
             instance_variable_set("@#{attribute}", value)
           end
         end
 
         define_singleton_method "#{attribute}=" do |value|
+          options[attribute.to_sym] ||= value
           instance_variable_set("@#{attribute}", value)
         end
       end
