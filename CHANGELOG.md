@@ -1,8 +1,8 @@
-# v0.3.6 2021-03-10
+# v0.3.9 2021-03-10
 
 - Synchronize access with Mutex
 - Add key_resolver
-- Inherit options set through accessors
+- Fix: Inherit options set through accessors
 
 # v0.3.5 2020-12-23
 
