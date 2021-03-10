@@ -2,8 +2,7 @@
 
 # NxtRegistry
 
-`NxtRegistry` is a simple implementation of the container pattern. It allows you to register and resolve values in nested 
-structures.
+`NxtRegistry` is a simple container that allows you to register and resolve values in nested structures.
 
 ## Installation
 
@@ -258,19 +257,21 @@ registry.resolve(:one)
 # => 2020-01-02 23:56:18 +0100
 ```
 
-### Resolver
+### Resolve callbacks
 
-You can register a resolver block if you want to lay hands on your values after they have been resolved. 
-A resolver can be anything that implements `:call` to which the value is passed.  
+You can hook into the before and after resolver callbacks in case you need to lay hands on your values
+before and / or after resolving. A callback can be anything that implements `:call` to which the value is passed.  
 
 ```ruby
 registry :example do
-  resolver ->(value) { value * 2 }
-  register(:one, 1)
+  key_resolver ->(key) { key.strip }
+  resolver ->(value) { value.upcase }
+  
+  register(:input, 'output')
 end
 
-registry.resolve(:one)
-# => 2
+registry.resolve('  input   ')
+# => 'OUTPUT'
 ```
 
 ### Transform keys

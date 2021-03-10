@@ -629,5 +629,9 @@ RSpec.describe NxtRegistry do
       expect { clone.allowed_keys(:rapha) }.to_not change { subject.send(:allowed_keys) }
       expect { subject.allowed_keys(:lütfi) }.to_not change { clone.send(:allowed_keys) }
     end
+
+    it 'creates a new mutex' do
+      expect(clone.instance_variable_get('@mutex').object_id).to_not eq(subject.instance_variable_get('@mutex').object_id)
+    end
   end
 end
