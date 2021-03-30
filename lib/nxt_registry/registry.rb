@@ -205,36 +205,35 @@ module NxtRegistry
     end
 
     def __resolve(key, raise_on_key_not_registered: true)
-      mutex.synchronize do
-        key = transformed_key(key)
 
-        value = if is_leaf?
-          resolved_key = key_resolver.call(key)
+      key = transformed_key(key)
 
-          if store.key?(resolved_key)
-            store.fetch(resolved_key)
-          elsif (pattern = matching_pattern(resolved_key))
-            store.fetch(pattern)
-          else
-            if is_a_blank?(default)
-              return unless raise_on_key_not_registered
+      value = if is_leaf?
+        resolved_key = key_resolver.call(key)
 
-              on_key_not_registered && on_key_not_registered.call(key)
-            else
-              value = resolve_default(key)
-              return value unless memoize
-
-              store[key] ||= value
-            end
-          end
+        if store.key?(resolved_key)
+          store.fetch(resolved_key)
+        elsif (pattern = matching_pattern(resolved_key))
+          store.fetch(pattern)
         else
-          store[key] ||= default.call
+          if is_a_blank?(default)
+            return unless raise_on_key_not_registered
+
+            on_key_not_registered && on_key_not_registered.call(key)
+          else
+            value = resolve_default(key)
+            return value unless memoize
+
+            store[key] ||= value
+          end
         end
-
-        value = call_or_value(value, key)
-
-        resolver.call(value)
+      else
+        store[key] ||= default.call
       end
+
+      value = call_or_value(value, key)
+
+      resolver.call(value)
     end
 
     def matching_key(key)

@@ -1,3 +1,6 @@
+# v0.3.10 2021-03-30
+- Do not synchronize resolve with mutex
+
 # v0.3.9 2021-03-10
 
 - Synchronize access with Mutex
