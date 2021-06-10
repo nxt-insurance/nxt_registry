@@ -1,7 +1,7 @@
 PATH
   remote: .
   specs:
-    nxt_registry (0.3.9)
+    nxt_registry (0.3.10)
       activesupport
 
 GEM
