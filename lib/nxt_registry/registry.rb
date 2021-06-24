@@ -92,16 +92,36 @@ module NxtRegistry
       end
     end
 
-    def resolve!(*keys)
-      keys.inject(self) do |current_registry, key|
-        current_registry.send(:__resolve, key, raise_on_key_not_registered: true)
+    def resolve!(*keys, **options)
+      current_registry = self
+      value = nil
+
+      keys.each_with_index do |key, index|
+        if current_registry.is_a?(Registry)
+          current_registry = value = current_registry.send(:__resolve, key, true) || break
+        else
+          args = keys[index+1, keys.length]
+          current_registry = value = current_registry.send(:__resolve, key, true, *args, **options) || break
+        end
       end
+
+      value
     end
 
-    def resolve(*keys)
-      keys.inject(self) do |current_registry, key|
-        current_registry.send(:__resolve, key, raise_on_key_not_registered: false) || break
+    def resolve(*keys, **options)
+      current_registry = self
+      value = nil
+
+      keys.each_with_index do |key, index|
+        if current_registry.is_a?(Registry)
+          current_registry = value = current_registry.send(:__resolve, key, false) || break
+        else
+          args = keys[index+1, keys.length]
+          current_registry = value = current_registry.send(:__resolve, key, false, *args, **options) || break
+        end
       end
+
+      value
     end
 
     def to_h
@@ -169,6 +189,10 @@ module NxtRegistry
     attr_reader :namespace, :parent, :config, :store, :options, :accessor, :patterns
     attr_accessor :is_leaf, :interface_defined
 
+    def is_leaf?
+      @is_leaf
+    end
+
     def conditionally_inherit_options(opts)
       base = opts.delete(:inherit_options) ? options : {}
       base.merge(opts).merge(parent: self)
@@ -180,10 +204,6 @@ module NxtRegistry
 
         raise Errors::RequiredKeyMissing, "Required key '#{key}' missing in #{self}"
       end
-    end
-
-    def is_leaf?
-      @is_leaf
     end
 
     def __register(key, value, raise_on_key_already_registered: true)
@@ -204,7 +224,7 @@ module NxtRegistry
       end
     end
 
-    def __resolve(key, raise_on_key_not_registered: true)
+    def __resolve(key, raise_on_key_not_registered, *args, **options)
 
       key = transformed_key(key)
 
@@ -221,7 +241,7 @@ module NxtRegistry
 
             on_key_not_registered && on_key_not_registered.call(key)
           else
-            value = resolve_default(key)
+            value = resolve_default(key, *args, **options)
             return value unless memoize
 
             store[key] ||= value
@@ -233,7 +253,7 @@ module NxtRegistry
 
       value = call_or_value(value, key)
 
-      resolver.call(value)
+      resolver.call(value, *args, **options)
     end
 
     def matching_key(key)
@@ -330,9 +350,9 @@ module NxtRegistry
       allowed_keys.exclude?(transformed_key(key))
     end
 
-    def resolve_default(key)
+    def resolve_default(key, *args, **options)
       if call && default.respond_to?(:call)
-        default.arity > 0 ? default.call(key) : default.call
+        default.arity > 0 ? default.call(key, *args, **options) : default.call
       else
         default
       end
