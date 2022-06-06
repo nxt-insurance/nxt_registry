@@ -7,9 +7,9 @@ jobs:
   build:
     docker:
       # specify the version you desire here
-      - image: circleci/ruby:2.6.5-node
+      - image: cimg/ruby:3.1.2
     environment:
-      BUNDLER_VERSION: 2.1.4
+      BUNDLER_VERSION: 2.2.4
 
     working_directory: ~/repo
 
@@ -20,7 +20,7 @@ jobs:
       - restore_cache:
           keys:
             - v1-dependencies-{{ checksum "Gemfile.lock" }}
-            
+
       - run: gem install bundler --version $BUNDLER_VERSION
 
       - run:
