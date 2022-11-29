@@ -20,22 +20,6 @@ Or install it yourself as:
 
     $ gem install nxt_registry
 
-## Using registries in tests
-
-Whenever you want to stub a value resolved by a registry, do the following:
-
-```ruby
-  before do
-    my_registry.enable_stubs!
-    my_registry.stub(:path, :to, :a, :key, 'stubbed_value')
-  end
-
-  after do
-    # Make sure to unstub after every example!
-    my_registry.unstub
-  end
-```
-
 ## Usage
 
 ### Simple use case

@@ -1,6 +1,3 @@
-# v0.3.11 2022-11-11
-- Allow registries to be stubbed for testing purposes
-
 # v0.3.10 2021-03-30
 - Do not synchronize resolve with mutex
 
