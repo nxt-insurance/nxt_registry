@@ -257,6 +257,18 @@ registry.resolve(:one)
 # => 2020-01-02 23:56:18 +0100
 ```
 
+**IMPORTANT**: whenever you want your value to be evaluated anew every time it is resolved, you should always wrap it in a lambda.
+
+For example, if you're resolving an ENV variable you should do it this way:
+
+```ruby
+registry :example do
+  register(:env_variable, -> { ENV['FEATURE_FLAG'] })
+end
+```
+
+In this case config can be reloaded on the fly, and tests can also overwrite feature flags, for example.
+
 ### Resolve callbacks
 
 You can hook into the before and after resolver callbacks in case you need to lay hands on your values
