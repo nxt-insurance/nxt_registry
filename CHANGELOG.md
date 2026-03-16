@@ -1,3 +1,10 @@
+# Unreleased
+
+- Migrate CI from CircleCI/Travis to GitHub Actions (matrix: Ruby 3.3, 3.4, 4.0)
+- Add `required_ruby_version >= 3.3` to gemspec
+- Update bundler 2.2.4 → 4.0.8, rake ~> 13, activesupport 8.1.2
+- Remove rspec_junit_formatter (CircleCI-only dependency)
+
 # v0.3.10 2021-03-30
 - Do not synchronize resolve with mutex
 
